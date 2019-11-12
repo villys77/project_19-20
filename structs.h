@@ -1,0 +1,48 @@
+//
+// Created by villys on 5/11/2018.
+//
+
+#ifndef PROJECT_STRUCTS_H
+#define PROJECT_STRUCTS_H
+
+#include <stdint.h>
+#define SIZE_NODE (1024*1024)/(2*sizeof(uint64_t))
+#define QUICKSORT_SIZE 8000
+
+
+
+typedef struct tuple
+{
+    uint64_t key;
+    uint64_t payload;
+    int check;
+}tuple;
+
+
+typedef struct hist
+{
+    unsigned binary;
+    unsigned count;
+}hist;
+
+typedef struct relation
+{
+    struct tuple *tuples;
+    uint64_t num_tuples;
+}relation;
+
+typedef struct ResultNode
+{
+    uint64_t buffer[SIZE_NODE][2];
+    int c;
+    struct ResultNode *next;
+}ResultNode;
+
+
+typedef struct Result{
+    ResultNode *first;
+    ResultNode *current;
+}Result;
+
+
+#endif //PROJECT_STRUCTS_H
