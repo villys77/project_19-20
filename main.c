@@ -17,10 +17,10 @@ int main(int argc,char **argv)
     relation relA=read_file(argv[1]);
     relation Sorting_relA=Sort(relA);
 
-//    for(int i=0; i<relA.num_tuples; i++)
-//    {
-//        printf("%llu\n",Sorting_relA.tuples[i].key);
-//    }
+    for(int i=0; i<relA.num_tuples; i++)
+    {
+        //printf("%llu\n",Sorting_relA.tuples[i].key);
+    }
 
     printf("eeeee\n\n");
 
@@ -33,10 +33,10 @@ int main(int argc,char **argv)
 
     printf("eeeee\n\n");
 
-//    for(int i=0; i<relB.num_tuples; i++)
-//    {
-//        printf("%llu\n",Sorting_relB.tuples[i].key);
-//    }
+    for(int i=0; i<relB.num_tuples; i++)
+    {
+        //printf("%llu\n",Sorting_relB.tuples[i].key);
+    }
 
 
 

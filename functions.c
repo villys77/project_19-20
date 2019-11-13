@@ -74,12 +74,6 @@ relation Sort(relation array0)
 
 void sorting(relation * array0, relation * array1 ,int start,int end,int where_to_write,int byte)
 {
-
-    if(byte==0)
-    {
-        return;
-    }
-
     switch (byte)
     {
         case 6:
@@ -106,6 +100,7 @@ void sorting(relation * array0, relation * array1 ,int start,int end,int where_t
     }
 
 
+    // printf("mphka me start %d kai end %d byte %d kai where %d\n",start,end,byte,where_to_write);
 
 
     uint64_t power = pow(2, n) -1;     /// 2^n (megethos pinakwn psum kai hist)
@@ -123,250 +118,389 @@ void sorting(relation * array0, relation * array1 ,int start,int end,int where_t
 
 
 
-
-    ////////////////////////////////////////////////////////
-    ////////HIST
-
-
-    hist Hist[power];
-
-    for (i = 0; i <= power; i++)
+    if(byte==7)
     {
-        Hist[i].binary = i;
-        Hist[i].count = 0;
-    }
 
-    for (i = start; i < end; i++)
-    {
-        for (j = 0; j <= power; j++)
+        ////////////////////////////////////////////////////////
+        ////////HIST
+
+
+        hist Hist[power];
+
+        for (i = 0; i <= power; i++)
         {
-            uint64_t aa=array0->tuples[i].key;
-            uint64_t x =(aa >> (8*byte)) &  0xff;
-            if (  (x & mask) == Hist[j].binary )
+            Hist[i].binary = i;
+            Hist[i].count = 0;
+        }
+
+        for (i = 0; i < array0->num_tuples; i++)
+        {
+            for (j = 0; j <= power; j++)
             {
-                Hist[j].count++;
-                break;
+                uint64_t aa=array0->tuples[i].key;
+                uint64_t x =(aa >> (8*byte)) &  0xff;
+                if (  (x & mask) == Hist[j].binary )
+                {
+                    Hist[j].count++;
+                    break;
+                }
             }
         }
-    }
 
 
 
-    ////////////////////////////////////////////////////////////////////
-    //////////////PSUM
-    hist Psum[power];
-    for (i = 0; i<= power; i++)
-    {
-        Psum[i].binary = i;
-        if (i == 0)
+        ////////////////////////////////////////////////////////////////////
+        //////////////PSUM
+        hist Psum[power];
+        for (i = 0; i<= power; i++)
         {
-            Psum[i].count = start;
+            Psum[i].binary = i;
+            if (i == 0)
+            {
+                Psum[i].count = 0;
+            }
+            else
+            {
+                Psum[i].count = Psum[i - 1].count + Hist[i - 1].count;
+            }
+        }
+
+
+        //////antigrafh timwn stous pinakes
+
+        int where_in_array = 0;
+        while (where_in_array <=power)
+        {
+            if (where_in_array == power) ///////pepiptwsh pou eimaste sthn teleytaia epanalh4h
+            {
+                for (i = Psum[where_in_array].count; i < array0->num_tuples; i++)
+                {
+                    for (j = 0; j < array0->num_tuples; j++)
+                    {
+                        uint64_t aa=array0->tuples[j].key;
+                        uint64_t x =(aa >> (8*byte)) &  0xff;
+                        if( ( (x & mask) == where_in_array ) && (array0->tuples[j].check == 0)  )
+                        {
+                            array1->tuples[i].key = array0->tuples[j].key;
+                            array1->tuples[i].payload = array0->tuples[j].payload;
+                            array0->tuples[j].check = 1;
+                            break;
+                        }
+                    }
+                }
+                break;
+            }
+            else ///opoiadhpote endiamesh periptwsh
+            {
+
+                for (i = Psum[where_in_array].count; i < Psum[where_in_array + 1].count; i++)
+                {
+                    for (j = 0; j < array0->num_tuples; j++)
+                    {
+                        uint64_t aa=array0->tuples[j].key;
+                        uint64_t x =(aa >> (8*byte)) &  0xff;
+                        if( ( (x & mask) == where_in_array ) && (array0->tuples[j].check == 0)  )////an matcharei aki den exei ksanatsekaristei
+                        {
+                            array1->tuples[i].key = array0->tuples[j].key;
+                            array1->tuples[i].payload = array0->tuples[j].payload;
+                            array0->tuples[j].check = 1;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            where_in_array++;
+        }
+
+
+
+
+
+        where_in_array=0;
+        while (where_in_array <=power)
+        {
+            if (where_in_array == power) ///////pepiptwsh pou eimaste sthn teleytaia epanalh4h
+            {
+
+                if(Hist[where_in_array].count==0 )
+                {
+                    where_in_array++;
+                    continue;
+                }
+
+                if( (Hist[where_in_array].count) <= 8000  )
+                {
+                    quickSort(*array1,Psum[where_in_array].count,array0->num_tuples-1);
+                }
+                else
+                {
+                    sorting(array0,array1,Psum[where_in_array].count,array0->num_tuples,where_to_write,byte-1);
+                }
+            }
+            else ///opoiadhpote endiamesh periptwsh
+            {
+
+
+                if(Hist[where_in_array].count==0 || Psum[where_in_array].count==Psum[where_in_array+1].count)
+                {
+                    where_in_array++;
+                    continue;
+                }
+
+                if( (Hist[where_in_array].count) <= 8000 )
+                {
+                    quickSort(*array1,Psum[where_in_array].count,Psum[where_in_array+1].count-1);
+
+                }
+                else
+                {
+                    sorting(array0,array1,Psum[where_in_array].count,Psum[where_in_array+1].count,where_to_write,byte-1);
+                }
+            }
+
+            where_in_array++;
+        }
+
+    }
+    else
+    {
+        if(byte==0)
+        {
+            quickSort(*array1,start,end-1);
+            return;
+        }
+        hist Hist[power];
+
+        for (i = 0; i <= power; i++)
+        {
+            Hist[i].binary = i;
+            Hist[i].count = 0;
+        }
+
+        for (i = start; i < end; i++)
+        {
+            for (j = 0; j <= power; j++)
+            {
+                if(where_to_write==1)
+                {
+                    uint64_t aa=array0->tuples[i].key;
+                    uint64_t x =(aa >> (8*byte)) &  0xff;
+                    if ((x & mask) == Hist[j].binary)
+                    {
+                        Hist[j].count++;
+                        break;
+                    }
+                }
+                else
+                {
+                    uint64_t aa=array1->tuples[i].key;
+                    uint64_t x =(aa >> (8*byte)) &  0xff;
+                    if ((x & mask) == Hist[j].binary)
+                    {
+                        int k=x & mask;
+                        Hist[j].count++;
+                        break;
+                    }
+                }
+
+            }
+        }
+
+
+
+        ////////////////////////////////////////////////////////////////////
+        //////////////PSUM
+        hist Psum[power];
+        for (i = 0; i<= power; i++)
+        {
+            Psum[i].binary = i;
+            if (i == 0)
+            {
+                Psum[i].count = start;
+            }
+            else
+            {
+                Psum[i].count = Psum[i - 1].count + Hist[i - 1].count;
+            }
+        }
+
+
+        int where_in_array = 0;
+        while (where_in_array <=power)
+        {
+            if (where_in_array == power) ///////pepiptwsh pou eimaste sthn teleytaia epanalh4h
+            {
+                for (i = Psum[where_in_array].count; i < end; i++)
+                {
+                    if(where_to_write==1)
+                    {
+                        for (j = start; j < end; j++)
+                        {
+                            uint64_t aa=array0->tuples[j].key;
+                            uint64_t x =(aa >> (8*byte)) &  0xff;
+                            if( ( (x & mask) == where_in_array ) && (array0->tuples[j].check == 0)  )
+                            {
+                                array1->tuples[i].key = array0->tuples[j].key;
+                                array1->tuples[i].payload = array0->tuples[j].payload;
+                                array0->tuples[j].check = 1;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (j = start; j < end; j++)
+                        {
+                            uint64_t aa=array1->tuples[j].key;
+                            uint64_t x =(aa >> (8*byte)) &  0xff;
+                            if( ( (x & mask) == where_in_array )  && (array1->tuples[j].check == 0)  )
+                            {
+                                array0->tuples[i].key = array1->tuples[j].key;
+                                array0->tuples[i].payload = array1->tuples[j].payload;
+                                array1->tuples[j].check = 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+            else ///opoiadhpote endiamesh periptwsh
+            {
+
+                for (i = Psum[where_in_array].count; i < Psum[where_in_array + 1].count; i++)
+                {
+                    if(where_to_write==1)
+                    {
+                        for (j = start; j < end; j++)
+                        {
+                            uint64_t aa=array0->tuples[j].key;
+                            uint64_t x =(aa >> (8*byte)) &  0xff;
+                            if( ( (x & mask) == where_in_array ) && (array0->tuples[j].check == 0)  )////an matcharei aki den exei ksanatsekaristei
+                            {
+                                array1->tuples[i].key = array0->tuples[j].key;
+                                array1->tuples[i].payload = array0->tuples[j].payload;
+                                array0->tuples[j].check = 1;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (j = start; j < end; j++)
+                        {
+                            uint64_t aa=array1->tuples[j].key;
+                            uint64_t x =(aa >> (8*byte)) &  0xff;
+                            if( ( (x & mask) == where_in_array )  && (array1->tuples[j].check == 0) )////an matcharei aki den exei ksanatsekaristei
+                            {
+                                array0->tuples[i].key = array1->tuples[j].key;
+                                array0->tuples[i].payload = array1->tuples[j].payload;
+                                array1->tuples[j].check = 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            where_in_array++;
+        }
+
+
+        if(where_to_write==1)
+        {
+            where_to_write=0;
         }
         else
         {
-            Psum[i].count = Psum[i - 1].count + Hist[i - 1].count;
+            where_to_write=1;
         }
-    }
-
-
-    //////////////////////////////////////////////////////////////////
-    //////antigrafh timwn stous pinakes
-
-    int where_in_array = 0;
-    while (where_in_array <=power)
-    {
-        if (where_in_array == power) ///////pepiptwsh pou eimaste sthn teleytaia epanalh4h
-        {
-            for (i = Psum[where_in_array].count; i < end; i++)
-            {
-                for (j = start; j < end; j++)
-                {
-                    if(where_to_write==1)
-                    {
-                        uint64_t aa=array0->tuples[j].key;
-                        uint64_t x =(aa >> (8*byte)) &  0xff;
-                        if( ( (x & mask) == where_in_array ) && (array0->tuples[j].check == 0)  )
-                        {
-                            array1->tuples[i].key = array0->tuples[j].key;
-                            array1->tuples[i].payload = array0->tuples[j].payload;
-                            array0->tuples[j].check = 1;
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        uint64_t aa=array1->tuples[j].key;
-                        uint64_t x =(aa >> (8*byte)) &  0xff;
-                        if( ( (x & mask) == where_in_array ) && (array1->tuples[j].check == 0)  )
-                        {
-                            array0->tuples[i].key = array1->tuples[j].key;
-                            array0->tuples[i].payload = array1->tuples[j].payload;
-                            array1->tuples[j].check = 1;
-                            break;
-                        }
-                    }
-
-                }
-            }
-            break;
-        }
-        else ///opoiadhpote endiamesh periptwsh
+        where_in_array=0;
+        while (where_in_array <=power)
         {
 
-            for (i = Psum[where_in_array].count; i < Psum[where_in_array + 1].count; i++)
+            if (where_in_array == power) ///////pepiptwsh pou eimaste sthn teleytaia epanalh4h
             {
-                for (j = start; j < end; j++)
-                {
-                    if(where_to_write==1)
-                    {
-                        uint64_t aa=array0->tuples[j].key;
-                        uint64_t x =(aa >> (8*byte)) &  0xff;
-                        if( ( (x & mask) == where_in_array ) && (array0->tuples[j].check == 0)  )
-                        {
-                            array1->tuples[i].key = array0->tuples[j].key;
-                            array1->tuples[i].payload = array0->tuples[j].payload;
-                            array0->tuples[j].check = 1;
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        uint64_t aa=array1->tuples[j].key;
-                        uint64_t x =(aa >> (8*byte)) &  0xff;
-                        if( ( (x & mask) == where_in_array ) && (array1->tuples[j].check == 0)  )
-                        {
-                            array0->tuples[i].key = array1->tuples[j].key;
-                            array0->tuples[i].payload = array1->tuples[j].payload;
-                            array1->tuples[j].check = 1;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
 
-        where_in_array++;
-    }
-
-
-
-
-
-    where_in_array=0;
-    while (where_in_array <=power)
-    {
-        if (where_in_array == power) ///////pepiptwsh pou eimaste sthn teleytaia epanalh4h
-        {
-
-            if(Hist[where_in_array].count==0 )
-            {
-                where_in_array++;
-                continue;
-            }
-
-            if( (Hist[where_in_array].count) <= 8000  )
-            {
-                if(Hist[where_in_array].count==1)
+                if(Hist[where_in_array].count==0 )
                 {
                     where_in_array++;
                     continue;
                 }
-                if(where_to_write==1)
+
+
+                if( (Hist[where_in_array].count) <= 8000)
                 {
-                    if(Hist[where_in_array].count==1)
+
+
+                    if(where_to_write==1)
                     {
-                        array1->tuples[Psum[where_in_array].count].key=array0->tuples[Psum[where_in_array].count].key;
-                        array1->tuples[Psum[where_in_array].count].payload=array0->tuples[Psum[where_in_array].count].payload;
-                        where_in_array++;
-                        continue;
+                        quickSort(*array0,Psum[where_in_array].count,end-1);
+                        for(int s=Psum[where_in_array].count; s< end; s++)
+                        {
+                            array1->tuples[s].key=array0->tuples[s].key;
+                            array1->tuples[s].payload=array0->tuples[s].payload;
+
+                        }
 
                     }
-                    quickSort(*array0,Psum[where_in_array].count,end-1);
-
-                    for(int s=Psum[where_in_array].count; s < end; s++)
+                    else
                     {
-                        array1->tuples[s].key=array0->tuples[s].key;
-                        array1->tuples[s].payload=array0->tuples[s].payload;
-
+                        quickSort(*array1,Psum[where_in_array].count,end-1);
                     }
                 }
                 else
                 {
-                    if(Hist[where_in_array].count==1)
-                    {
-                        where_in_array++;
-                        continue;
-                    }
-                    quickSort(*array1,Psum[where_in_array].count,end-1);
-
+                        sorting(array0,array1,Psum[where_in_array].count,end,where_to_write,byte-1);
                 }
             }
-            else
+            else ///opoiadhpote endiamesh periptwsh
             {
-                sorting(array0,array1,Psum[where_in_array].count,end,where_to_write,byte-1);
-            }
-        }
-        else ///opoiadhpote endiamesh periptwsh
-        {
 
 
-            if(Hist[where_in_array].count==0 || Psum[where_in_array].count==Psum[where_in_array+1].count)
-            {
-                where_in_array++;
-                continue;
-            }
 
-            if( (Hist[where_in_array].count) <= 8000 )
-            {
-                if(Hist[where_in_array].count==1)
+                if(Hist[where_in_array].count==0 || Psum[where_in_array].count==Psum[where_in_array+1].count)
                 {
                     where_in_array++;
                     continue;
                 }
-                if(where_to_write==1)
+
+                if( (Hist[where_in_array].count) <= 8000 )
                 {
-                    if(Hist[where_in_array].count==1)
+                    if(where_to_write==1)
                     {
-                        array1->tuples[Psum[where_in_array].count].key=array0->tuples[Psum[where_in_array].count].key;
-                        array1->tuples[Psum[where_in_array].count].payload=array0->tuples[Psum[where_in_array].count].payload;
-                        where_in_array++;
-                        continue;
+                        quickSort(*array0,Psum[where_in_array].count,Psum[where_in_array+1].count-1);
+                        for(int s=Psum[where_in_array].count; s<Psum[where_in_array+1].count; s++)
+                        {
+                            //printf(" apo 1 %llu\n",array0->tuples[s].key);
+                            array1->tuples[s].key=array0->tuples[s].key;
+                            array1->tuples[s].payload=array0->tuples[s].payload;
 
+                        }
                     }
-                    quickSort(*array0,Psum[where_in_array].count,end-1);
-
-                    for(int s=Psum[where_in_array].count; s < end; s++)
+                    else
                     {
-                        array1->tuples[s].key=array0->tuples[s].key;
-                        array1->tuples[s].payload=array0->tuples[s].payload;
-
+                        quickSort(*array1,Psum[where_in_array].count,Psum[where_in_array+1].count-1);
                     }
                 }
                 else
                 {
-                    if(Hist[where_in_array].count==1)
+                    if(Psum[where_in_array].count==start && Psum[where_in_array+1].count==end)
                     {
-                        where_in_array++;
-                        continue;
+                        return;
                     }
-                    quickSort(*array1,Psum[where_in_array].count,end-1);
-
+                    sorting(array0,array1,Psum[where_in_array].count,Psum[where_in_array+1].count,where_to_write,byte-1);
                 }
+            }
 
-            }
-            else
-            {
-                if(start==Psum[where_in_array].count && Psum[where_in_array+1].count==end)
-                {
-                    return;
-                }
-                sorting(array0,array1,Psum[where_in_array].count,Psum[where_in_array+1].count,where_to_write,byte-1);
-            }
+            where_in_array++;
         }
 
-        where_in_array++;
-    }
 
+
+
+    }
 
 }
 
@@ -545,7 +679,7 @@ void Join(relation R, relation S )
             }
         }
     }
-    PrintResults(ResultList);
+    //PrintResults(ResultList);
     printf("Number of Joins: %d\n",num_of_matches);
     freelist(ResultList);
 }
