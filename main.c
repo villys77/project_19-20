@@ -1,9 +1,10 @@
-#include <stdio.h>
+    #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "structs.h"
 #include "functions.h"
-#include <inttypes.h>
+
+
 
 int main(int argc,char **argv)
 {
@@ -22,16 +23,14 @@ int main(int argc,char **argv)
         //printf("%llu\n",Sorting_relA.tuples[i].key);
     }
 
-    printf("eeeee\n\n");
+    //printf("eeeee\n\n");
 
-    /////////
-    /////mexri edw gia Relation A
 
     relation relB=read_file(argv[2]);
 
     relation Sorting_relB=Sort(relB);
 
-    printf("eeeee\n\n");
+    //printf("eeeee\n\n");
 
     for(int i=0; i<relB.num_tuples; i++)
     {

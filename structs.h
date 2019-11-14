@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 #define SIZE_NODE (1024*1024)/(2*sizeof(uint64_t))
-#define QUICKSORT_SIZE 8000
+#define QUICKSORT_SIZE 1024*64
 
 
 
@@ -34,7 +34,7 @@ typedef struct relation
 typedef struct ResultNode
 {
     uint64_t buffer[SIZE_NODE][2];
-    int c;
+    int counter;
     struct ResultNode *next;
 }ResultNode;
 
