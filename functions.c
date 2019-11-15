@@ -101,7 +101,7 @@ void sorting(relation * array0, relation * array1 ,int start,int end,int where_t
 
 
 
-  //   printf("mphka me start %d kai end %d byte %d kai where %d\n",start,end,byte,where_to_write);
+    // printf("mphka me start %d kai end %d byte %d kai where %d\n",start,end,byte,where_to_write);
 
 
     uint64_t power = pow(2, n) -1;     /// 2^n (megethos pinakwn psum kai hist)
@@ -110,11 +110,26 @@ void sorting(relation * array0, relation * array1 ,int start,int end,int where_t
 
     uint64_t  i=0,j=0;
 
-    for(i=0; i<array0->num_tuples; i++)
-    {
-        array0->tuples[i].check=0;
-        array1->tuples[i].check=0;
+//    for(i=start; i<end; i++)
+//    {
+//        array0->tuples[i].check=0;
+//        array1->tuples[i].check=0;
+//
+//    }
 
+    if(where_to_write==1)
+    {
+        for(int i=start; i<end; i++)
+        {
+            array1->tuples[i].key=0;
+        }
+    }
+    else
+    {
+        for(int i=start; i<end; i++)
+        {
+            array0->tuples[i].key=0;
+        }
     }
 
     if(byte==0)
@@ -189,13 +204,14 @@ void sorting(relation * array0, relation * array1 ,int start,int end,int where_t
             {
                 for (j = start; j < end; j++)
                 {
+
                     uint64_t aa=array0->tuples[j].key;
                     uint64_t x =(aa >> (8*byte)) &  0xff;
-                    if( ( (x & mask) == where_in_array ) && (array0->tuples[j].check == 0)  )
+                    if( ( (x & mask) == where_in_array ) && (array0->tuples[j].key != -1)  )
                     {
                         array1->tuples[i].key = array0->tuples[j].key;
                         array1->tuples[i].payload = array0->tuples[j].payload;
-                        array0->tuples[j].check = 1;
+                        array0->tuples[j].key = -1;
                         break;
                     }
                 }
@@ -206,11 +222,11 @@ void sorting(relation * array0, relation * array1 ,int start,int end,int where_t
                 {
                     uint64_t aa=array1->tuples[j].key;
                     uint64_t x =(aa >> (8*byte)) &  0xff;
-                    if( ( (x & mask) == where_in_array )  && (array1->tuples[j].check == 0)  )
+                    if( ( (x & mask) == where_in_array )  && (array1->tuples[j].key != -1)  )
                     {
                         array0->tuples[i].key = array1->tuples[j].key;
                         array0->tuples[i].payload = array1->tuples[j].payload;
-                        array1->tuples[j].check = 1;
+                        array1->tuples[j].key = -1;
                         break;
                     }
                 }
@@ -243,13 +259,14 @@ void sorting(relation * array0, relation * array1 ,int start,int end,int where_t
             if(where_to_write==1)
             {
                 quickSort(*array0,Psum[where_in_array].count,Psum[where_in_array+1].count-1);
-                //memcpy(array1->tuples+Psum[where_in_array].count,array0->tuples+Psum[where_in_array].count,Psum[where_in_array+1].count-Psum[where_in_array].count);
-                for(int s=Psum[where_in_array].count; s<Psum[where_in_array+1].count; s++)
-                {
-                    array1->tuples[s].key=array0->tuples[s].key;
-                    array1->tuples[s].payload=array0->tuples[s].payload;
-
-                }
+                memcpy(array1->tuples+Psum[where_in_array].count,array0->tuples+Psum[where_in_array].count,Hist[where_in_array].count*
+                                                                                                           sizeof(tuple));
+//                for(int s=Psum[where_in_array].count; s<Psum[where_in_array+1].count; s++)
+//                {
+//                    array1->tuples[s].key=array0->tuples[s].key;
+//                    array1->tuples[s].payload=array0->tuples[s].payload;
+//
+//                }
             }
             else
             {
@@ -375,7 +392,7 @@ void Join(relation R, relation S )
 
                 matches++;
                 //stelnw se lista
-                //InsertResult(R.tuples[i].payload,S.tuples[j].payload,ResultList);
+                InsertResult(R.tuples[i].payload,S.tuples[j].payload,ResultList);
                 num_of_matches++;
 
                 j++;
@@ -416,7 +433,7 @@ void Join(relation R, relation S )
             {
 
                 matches ++;
-                //InsertResult(S.tuples[i].payload,R.tuples[j].payload,ResultList);
+                InsertResult(S.tuples[i].payload,R.tuples[j].payload,ResultList);
                 num_of_matches++;
                 j++;
             }
@@ -445,7 +462,7 @@ void Join(relation R, relation S )
             }
         }
     }
-    //PrintResults(ResultList);
+    PrintResults(ResultList);
     printf("Number of Joins: %d\n",num_of_matches);
     freelist(ResultList);
 }
@@ -493,7 +510,7 @@ relation read_file(char * filename)
 
             array0.tuples[i].key=strtoull(str,NULL,10);
             array0.tuples[i].payload=strtoull(str1,NULL,10);
-            array0.tuples[i].check=0;
+//            array0.tuples[i].check=0;
 
         }
         i++;
