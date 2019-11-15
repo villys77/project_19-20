@@ -17,27 +17,8 @@ int main(int argc,char **argv)
     relation relA=read_file(argv[1]);
     relation Sorting_relA=Sort(relA);
 
-//    for(int i=0; i<relA.num_tuples; i++)
-//    {
-//        printf("%llu\n",Sorting_relA.tuples[i].key);
-//    }
-
-    //return 0;
-    //printf("eeeee\n\n");
-
-
     relation relB=read_file(argv[2]);
-
     relation Sorting_relB=Sort(relB);
-
-    //printf("eeeee\n\n");
-
-//    for(int i=0; i<relB.num_tuples; i++)
-//    {
-//        printf("%llu\n",Sorting_relB.tuples[i].key);
-//    }
-
-
 
     Join(Sorting_relA,Sorting_relB);
 

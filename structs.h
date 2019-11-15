@@ -15,7 +15,6 @@ typedef struct tuple
 {
     uint64_t key;
     uint64_t payload;
-    //int check;
 }tuple;
 
 

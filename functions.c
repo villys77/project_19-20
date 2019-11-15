@@ -101,7 +101,6 @@ void sorting(relation * array0, relation * array1 ,int start,int end,int where_t
 
 
 
-    // printf("mphka me start %d kai end %d byte %d kai where %d\n",start,end,byte,where_to_write);
 
 
     uint64_t power = pow(2, n) -1;     /// 2^n (megethos pinakwn psum kai hist)
@@ -109,28 +108,6 @@ void sorting(relation * array0, relation * array1 ,int start,int end,int where_t
 
 
     uint64_t  i=0,j=0;
-
-//    for(i=start; i<end; i++)
-//    {
-//        array0->tuples[i].check=0;
-//        array1->tuples[i].check=0;
-//
-//    }
-
-    if(where_to_write==1)
-    {
-        for(int i=start; i<end; i++)
-        {
-            array1->tuples[i].key=0;
-        }
-    }
-    else
-    {
-        for(int i=start; i<end; i++)
-        {
-            array0->tuples[i].key=0;
-        }
-    }
 
     if(byte==0)
     {
@@ -261,12 +238,6 @@ void sorting(relation * array0, relation * array1 ,int start,int end,int where_t
                 quickSort(*array0,Psum[where_in_array].count,Psum[where_in_array+1].count-1);
                 memcpy(array1->tuples+Psum[where_in_array].count,array0->tuples+Psum[where_in_array].count,Hist[where_in_array].count*
                                                                                                            sizeof(tuple));
-//                for(int s=Psum[where_in_array].count; s<Psum[where_in_array+1].count; s++)
-//                {
-//                    array1->tuples[s].key=array0->tuples[s].key;
-//                    array1->tuples[s].payload=array0->tuples[s].payload;
-//
-//                }
             }
             else
             {
@@ -275,7 +246,7 @@ void sorting(relation * array0, relation * array1 ,int start,int end,int where_t
         }
         else
         {
-            if(Psum[where_in_array].count==start && Psum[where_in_array+1].count==end)
+            if(Psum[where_in_array].count==start && Psum[where_in_array+1].count==end && where_to_write==0)
             {
                 return;
             }
@@ -377,7 +348,7 @@ void freelist(Result *head)
         }
     }
 }
-//
+
 void Join(relation R, relation S )
 {
     Result *ResultList = ListInit();
@@ -391,7 +362,6 @@ void Join(relation R, relation S )
             {
 
                 matches++;
-                //stelnw se lista
                 InsertResult(R.tuples[i].payload,S.tuples[j].payload,ResultList);
                 num_of_matches++;
 
