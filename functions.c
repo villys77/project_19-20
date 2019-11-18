@@ -8,7 +8,6 @@
 #include <string.h>
 #include <math.h>
 #include "functions.h"
-
 #include "structs.h"
 
 
@@ -74,34 +73,6 @@ relation Sort(relation array0)
 
 void sorting(relation * array0, relation * array1 ,int start,int end,int where_to_write,int byte)
 {
-    switch (byte)
-    {
-        case 6:
-            where_to_write=0;
-            break;
-        case 5:
-            where_to_write=1;
-            break;
-        case 4:
-            where_to_write=0;
-            break;
-        case 3:
-            where_to_write=1;
-            break;
-        case 2:
-            where_to_write=0;
-            break;
-        case 1:
-            where_to_write=1;
-            break;
-        case 0:
-            where_to_write=0;
-            break;
-    }
-
-
-
-
 
     uint64_t power = pow(2, n) -1;     /// 2^n (megethos pinakwn psum kai hist)
     uint64_t mask=power;
@@ -177,50 +148,13 @@ void sorting(relation * array0, relation * array1 ,int start,int end,int where_t
     {
         for (i = Psum[where_in_array].count; i < Psum[where_in_array+1].count; i++)
         {
-            if(where_to_write==1)
-            {
-                for (j = start; j < end; j++)
-                {
-
-                    uint64_t aa=array0->tuples[j].key;
-                    uint64_t x =(aa >> (8*byte)) &  0xff;
-                    if( ( (x & mask) == where_in_array ) && (array0->tuples[j].key != -1)  )
-                    {
-                        array1->tuples[i].key = array0->tuples[j].key;
-                        array1->tuples[i].payload = array0->tuples[j].payload;
-                        array0->tuples[j].key = -1;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                for (j = start; j < end; j++)
-                {
-                    uint64_t aa=array1->tuples[j].key;
-                    uint64_t x =(aa >> (8*byte)) &  0xff;
-                    if( ( (x & mask) == where_in_array )  && (array1->tuples[j].key != -1)  )
-                    {
-                        array0->tuples[i].key = array1->tuples[j].key;
-                        array0->tuples[i].payload = array1->tuples[j].payload;
-                        array1->tuples[j].key = -1;
-                        break;
-                    }
-                }
-            }
+            move_to_another_array(*array0,*array1,i,mask,where_to_write,where_in_array,byte,start,end);
         }
         where_in_array++;
     }
 
 
-    if(where_to_write==1)
-    {
-        where_to_write=0;
-    }
-    else
-    {
-        where_to_write=1;
-    }
+    where_to_write^=1; ////change where to write
 
     where_in_array=0;
     while (where_in_array <=power)
@@ -317,7 +251,6 @@ void PrintResults(Result *head)
     fclose(fp);
 
 }
-//
 
 //////////////////////////////////
 void freelist(Result *head)
@@ -434,6 +367,8 @@ void Join(relation R, relation S )
     }
     PrintResults(ResultList);
     printf("Number of Joins: %d\n",num_of_matches);
+    free(R.tuples);
+    free(S.tuples);
     freelist(ResultList);
 }
 
@@ -480,7 +415,6 @@ relation read_file(char * filename)
 
             array0.tuples[i].key=strtoull(str,NULL,10);
             array0.tuples[i].payload=strtoull(str1,NULL,10);
-//            array0.tuples[i].check=0;
 
         }
         i++;
@@ -489,4 +423,39 @@ relation read_file(char * filename)
     fclose(file);
     free(line);
     return array0;
+}
+
+void move_to_another_array(relation array0,relation array1,int i,int mask, int where_to_write,int where_in_array,int byte,int start,int end)
+{
+    if(where_to_write==1)
+    {
+        for (int j = start; j < end; j++)
+        {
+
+            uint64_t aa=array0.tuples[j].key;
+            uint64_t x =(aa >> (8*byte)) &  0xff;
+            if( ( (x & mask) == where_in_array ) && (array0.tuples[j].key != -1)  )
+            {
+                array1.tuples[i].key = array0.tuples[j].key;
+                array1.tuples[i].payload = array0.tuples[j].payload;
+                array0.tuples[j].key = -1;
+                break;
+            }
+        }
+    }
+    else
+    {
+        for (int j = start; j < end; j++)
+        {
+            uint64_t aa=array1.tuples[j].key;
+            uint64_t x =(aa >> (8*byte)) &  0xff;
+            if( ( (x & mask) == where_in_array )  && (array1.tuples[j].key != -1)  )
+            {
+                array0.tuples[i].key = array1.tuples[j].key;
+                array0.tuples[i].payload = array1.tuples[j].payload;
+                array1.tuples[j].key = -1;
+                break;
+            }
+        }
+    }
 }

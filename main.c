@@ -1,9 +1,7 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "structs.h"
 #include "functions.h"
-#include <time.h>
 
 
 int main(int argc,char **argv)
@@ -21,11 +19,6 @@ int main(int argc,char **argv)
     relation Sorting_relB=Sort(relB);
 
     Join(Sorting_relA,Sorting_relB);
-
-
-
-    free(Sorting_relA.tuples);
-    free(Sorting_relB.tuples);
 
     return  0;
 }
