@@ -26,9 +26,16 @@ typedef struct hist
 
 typedef struct relation
 {
-    struct tuple *tuples;
     uint64_t num_tuples;
+    uint64_t num_columns;
+    uint64_t * data;
 }relation;
+
+typedef struct column_data
+{
+    struct tuple * tuples;
+    uint64_t num_tuples;
+}column_data;
 
 typedef struct ResultNode
 {

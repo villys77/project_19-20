@@ -7,6 +7,10 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "functions.h"
 #include "structs.h"
 
@@ -22,7 +26,7 @@ void swap(uint64_t * a, uint64_t * b)
     *b = t;
 }
 
-int partition (relation arr, int low, int high)
+int partition (column_data arr, int low, int high)
 {
     uint64_t pivot = arr.tuples[high].key;    // pivot
     int i = (low - 1);  // Index of smaller element
@@ -43,7 +47,7 @@ int partition (relation arr, int low, int high)
     return (i + 1);
 }
 
-void quickSort(relation arr, int low, int high)
+void quickSort(column_data arr, int low, int high)
 {
     if(low < high)
     {
@@ -54,9 +58,9 @@ void quickSort(relation arr, int low, int high)
 }
 
 
-relation Sort(relation array0)
+column_data Sort(column_data array0)
 {
-    relation array1;
+    column_data array1;
     array1.num_tuples=array0.num_tuples;
     array1.tuples=malloc(sizeof(tuple)*array1.num_tuples);
     for(int i=0 ; i<array1.num_tuples; i++)
@@ -71,7 +75,7 @@ relation Sort(relation array0)
     return array1;
 }
 
-void sorting(relation * array0, relation * array1 ,int start,int end,int where_to_write,int byte)
+void sorting(column_data * array0, column_data * array1 ,int start,int end,int where_to_write,int byte)
 {
 
     uint64_t power = pow(2, n) -1;     /// 2^n (megethos pinakwn psum kai hist)
@@ -358,7 +362,7 @@ void freelist(Result *head)
     }
 }
 
-void Join(relation R, relation S )
+void Join(column_data R, column_data S )
 {
     Result *ResultList = ListInit();
     int i = 0 , j = 0 , matches = 0 ,num_of_matches =0 ;
@@ -448,8 +452,14 @@ void Join(relation R, relation S )
     freelist(ResultList);
 }
 
-relation read_file(char * filename)
+relation * read_file(char * filename)
 {
+    char * name=malloc(sizeof(char)*strlen(filename)+1);
+
+    strcpy(name,filename);
+    char *dataset=strtok(name,"/");
+    sprintf(dataset,"%s/",dataset);
+
     FILE *file;
     file = fopen(filename, "r"); ////read file
     if (file == NULL)
@@ -474,10 +484,8 @@ relation read_file(char * filename)
 
     rewind(file);
 
-    relation array0;
+    relation * relations=malloc(size_of_file* sizeof(relation));
 
-    array0.num_tuples=size_of_file;
-    array0.tuples=malloc(sizeof(tuple)*array0.num_tuples);
 
     int i=0;
     while (!feof(file)) ////dinw times sta stoixeia tou prwtou pinaka
@@ -485,19 +493,66 @@ relation read_file(char * filename)
         if ((my_read = getline(&line, &len, file)) != -1)
         {
 
-            line[strcspn(line, "\n")] = 0;
-            char *str = strtok(line, ",");
-            char * str1=strtok(NULL,"\n");
 
-            array0.tuples[i].key=strtoull(str,NULL,10);
-            array0.tuples[i].payload=strtoull(str1,NULL,10);
+            line[strcspn(line, "\n")] = 0;
+            char * path=malloc(sizeof(char)*(strlen(line)+strlen(dataset)+3));
+            sprintf(path,"%s%s",dataset,line);
+
+
+            uint64_t *ptr=loadRelation(path);
+            relations[i].num_tuples=ptr[0];
+            relations[i].num_columns=ptr[1];
+            int size=relations[i].num_tuples*relations[i].num_columns;
+            relations[i].data=malloc(sizeof(uint64_t)*size);
+            for(int j=0; j<size; j++)
+            {
+                relations[i].data[j]=ptr[j+2];
+            }
 
         }
+
         i++;
     }
+    rewind(file);
+
+
 
     fclose(file);
     free(line);
-    return array0;
+    free(name);
+    return relations;
 }
 
+uint64_t * loadRelation(char* fileName)
+{
+    int fp = open(fileName, O_RDONLY);
+
+    if (fp == -1)
+    {
+        perror("Error while opening the file.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    struct stat sb;
+
+    if (fstat(fp,&sb)==-1)
+    {
+        perror("stat\n");
+        exit(EXIT_FAILURE);
+    }
+
+    size_t length = sb.st_size;
+
+    uint64_t* ptr = mmap(NULL, length ,PROT_READ, MAP_PRIVATE, fp, 0);
+
+    if (ptr == MAP_FAILED)
+    {
+        perror("mmap");
+        exit(EXIT_FAILURE);
+    }
+
+    close(fp);
+    return ptr;
+
+
+}

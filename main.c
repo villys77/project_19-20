@@ -3,21 +3,19 @@
 #include "functions.h"
 
 
+
 int main(int argc,char **argv)
 {
-    if(argc!=3)
+    if(argc!=2)
     {
-        printf("Plase give 2 arguments\n");
+        printf("Plase give 1 argument\n");
         return 0;
     }
 
-    relation relA=read_file(argv[1]);
-    relation Sorting_relA=Sort(relA);
 
-    relation relB=read_file(argv[2]);
-    relation Sorting_relB=Sort(relB);
 
-    Join(Sorting_relA,Sorting_relB);
+    relation *relations=read_file(argv[1]); ////pinakas apo relations
+
 
     return  0;
 }
