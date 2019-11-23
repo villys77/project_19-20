@@ -12,7 +12,6 @@ relation Sort(relation);
 void sorting (relation *,relation *,int, int , int , int);
 void Join(relation , relation );
 relation read_file(char*);
-void move_to_another_array(relation array0,relation array1,int i,int mask,int where_to_write,int where_in_array,int byte,int start,int end);
 
 Result* ListInit();
 void InsertResult(uint64_t,uint64_t,Result*);

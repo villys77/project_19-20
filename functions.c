@@ -122,7 +122,69 @@ void sorting(relation * array0, relation * array1 ,int start,int end,int where_t
     }
 
 
+    int ** index;
+    index=malloc(sizeof(int*)*256);
+    for(int counter=0; counter<256; counter++)
+    {
+        index[counter]=malloc(sizeof(int)*Hist[counter].count);
+    }
+    for(int row=0; row<256; row++)
+    {
+        for(int column=0; column<Hist[row].count; column++)
+        {
+            index[row][column]=-1;
+        }
+    }
 
+    for(int row=0; row <256; row++)
+    {
+        for(int column=0; column<Hist[row].count; column++)
+        {
+
+        }
+    }
+
+        for(i=start; i<end; i++)
+        {
+            if(where_to_write==1)
+            {
+                uint64_t aa=array0->tuples[i].key;
+                uint64_t x =(aa >> (8*byte)) &  0xff;
+                uint64_t bt=x & mask;
+                for(int column=0; column<Hist[bt].count; column++)
+                {
+                    if(index[bt][column]==-1)
+                    {
+                        index[bt][column]=(int)i;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                uint64_t aa=array1->tuples[i].key;
+                uint64_t x =(aa >> (8*byte)) &  0xff;
+                uint64_t bt=x & mask;
+                for(int column=0; column<Hist[bt].count; column++)
+                {
+                    if(index[bt][column]==-1)
+                    {
+                        index[bt][column]=(int)i;
+                        break;
+                    }
+                }
+
+            }
+        }
+
+//    for(int row=0; row<256; row++)
+//    {
+//        for(int column=0; column<Hist[row].count; column++)
+//        {
+//            printf("%d\n",index[row][column]);
+//        }
+//    }
+//    return;
     ////////////////////////////////////////////////////////////////////
     //////////////PSUM
     hist Psum[power +1 ];
@@ -146,9 +208,23 @@ void sorting(relation * array0, relation * array1 ,int start,int end,int where_t
     int where_in_array = 0;
     while (where_in_array <=power)
     {
+        int column=0;
         for (i = Psum[where_in_array].count; i < Psum[where_in_array+1].count; i++)
         {
-            move_to_another_array(*array0,*array1,i,mask,where_to_write,where_in_array,byte,start,end);
+            if(where_to_write==1)
+            {
+                array1->tuples[i].key=array0->tuples[index[where_in_array][column]].key;
+                array1->tuples[i].payload=array0->tuples[index[where_in_array][column]].payload;
+
+            }
+            else
+            {
+                array0->tuples[i].key=array1->tuples[index[where_in_array][column]].key;
+                array0->tuples[i].payload=array1->tuples[index[where_in_array][column]].payload;
+
+            }
+
+            column++;
         }
         where_in_array++;
     }
@@ -425,37 +501,3 @@ relation read_file(char * filename)
     return array0;
 }
 
-void move_to_another_array(relation array0,relation array1,int i,int mask, int where_to_write,int where_in_array,int byte,int start,int end)
-{
-    if(where_to_write==1)
-    {
-        for (int j = start; j < end; j++)
-        {
-
-            uint64_t aa=array0.tuples[j].key;
-            uint64_t x =(aa >> (8*byte)) &  0xff;
-            if( ( (x & mask) == where_in_array ) && (array0.tuples[j].key != -1)  )
-            {
-                array1.tuples[i].key = array0.tuples[j].key;
-                array1.tuples[i].payload = array0.tuples[j].payload;
-                array0.tuples[j].key = -1;
-                break;
-            }
-        }
-    }
-    else
-    {
-        for (int j = start; j < end; j++)
-        {
-            uint64_t aa=array1.tuples[j].key;
-            uint64_t x =(aa >> (8*byte)) &  0xff;
-            if( ( (x & mask) == where_in_array )  && (array1.tuples[j].key != -1)  )
-            {
-                array0.tuples[i].key = array1.tuples[j].key;
-                array0.tuples[i].payload = array1.tuples[j].payload;
-                array1.tuples[j].key = -1;
-                break;
-            }
-        }
-    }
-}

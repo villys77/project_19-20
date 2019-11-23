@@ -1,12 +1,11 @@
 #include <stdio.h>
-#include <string.h>
 #include "structs.h"
 #include "functions.h"
 
 
 int main(int argc,char **argv)
 {
-    if(argv[1]==NULL || argv[2]==NULL)
+    if(argc!=3)
     {
         printf("Plase give 2 arguments\n");
         return 0;
