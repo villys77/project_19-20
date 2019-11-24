@@ -452,11 +452,11 @@ void Join(column_data R, column_data S )
     freelist(ResultList);
 }
 
-relation * read_file(char * filename)
+relation * read_file(char * filename,int *rels)
 {
     char * name=malloc(sizeof(char)*strlen(filename)+1);
-
     strcpy(name,filename);
+
     char *dataset=strtok(name,"/");
     sprintf(dataset,"%s/",dataset);
 
@@ -481,7 +481,7 @@ relation * read_file(char * filename)
             size_of_file++; //// count lines of doc
         }
     }
-
+    *rels=size_of_file;
     rewind(file);
 
     relation * relations=malloc(size_of_file* sizeof(relation));
@@ -492,22 +492,16 @@ relation * read_file(char * filename)
     {
         if ((my_read = getline(&line, &len, file)) != -1)
         {
-
-
             line[strcspn(line, "\n")] = 0;
             char * path=malloc(sizeof(char)*(strlen(line)+strlen(dataset)+3));
             sprintf(path,"%s%s",dataset,line);
 
-
-            uint64_t *ptr=loadRelation(path);
-            relations[i].num_tuples=ptr[0];
-            relations[i].num_columns=ptr[1];
+            relations[i].data=loadRelation(path);
+            relations[i].num_tuples=relations[i].data[0];
+            relations[i].num_columns=relations[i].data[1];
             int size=relations[i].num_tuples*relations[i].num_columns;
-            relations[i].data=malloc(sizeof(uint64_t)*size);
-            for(int j=0; j<size; j++)
-            {
-                relations[i].data[j]=ptr[j+2];
-            }
+            relations[i].data+=2;
+            free(path);
 
         }
 
@@ -516,10 +510,10 @@ relation * read_file(char * filename)
     rewind(file);
 
 
+    free(name);
 
     fclose(file);
     free(line);
-    free(name);
     return relations;
 }
 

@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <malloc.h>
+#include <sys/mman.h>
 #include "structs.h"
 #include "functions.h"
 
@@ -13,9 +15,15 @@ int main(int argc,char **argv)
     }
 
 
+    int rels;
+    relation *relations=read_file(argv[1],&rels); ////pinakas apo relations
 
-    relation *relations=read_file(argv[1]); ////pinakas apo relations
 
+    for(int i=0; i<rels; i++)
+    {
+        munmap(relations[i].data,relations[i].num_columns*relations[i].num_tuples);
+    }
+    free(relations);
 
     return  0;
 }

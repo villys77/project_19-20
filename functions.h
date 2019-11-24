@@ -11,7 +11,7 @@
 column_data Sort(column_data);
 void sorting (column_data *,column_data *,int, int , int , int);
 void Join(column_data , column_data );
-relation * read_file(char*);
+relation * read_file(char*,int *);
 uint64_t * loadRelation(char* fileName);
 
 Result* ListInit();
