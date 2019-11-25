@@ -51,4 +51,14 @@ typedef struct Result{
 }Result;
 
 
+struct preds{
+    int relation1; // h prwth sxesh
+    int colum1; // h kolona apo thn prwth sxesh
+    int relation2; // h deyterh sxesh
+    int colum2; // h kolona apo thn deuterh sxesh
+    int num;
+    char op; //einai h praksi ('<','>','=')
+    int prio;
+};
+
 #endif //PROJECT_STRUCTS_H

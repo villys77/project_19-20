@@ -12,7 +12,11 @@ column_data Sort(column_data);
 void sorting (column_data *,column_data *,int, int , int , int);
 void Join(column_data , column_data );
 relation * read_file(char*,int *);
-uint64_t * loadRelation(char* fileName);
+uint64_t * loadRelation(char* );
+void queries_analysis(char * );
+int * select_pred(int , struct preds*);
+
+
 
 Result* ListInit();
 void InsertResult(uint64_t,uint64_t,Result*);
@@ -21,7 +25,7 @@ void freelist(Result*);
 
 
 void swap(uint64_t * a, uint64_t * b);
-int partition (column_data arr, int low, int high);
-void quickSort(column_data arr, int low, int high);
+int partition (column_data, int , int);
+void quickSort(column_data, int , int);
 
 #endif //PROJECT_FUNCTIONS_H

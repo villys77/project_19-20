@@ -550,3 +550,318 @@ uint64_t * loadRelation(char* fileName)
 
 
 }
+
+
+void queries_analysis(char * FileToOpen)
+{
+
+    int i,j;
+    FILE *file;
+    if((file = fopen(FileToOpen, "r")) == NULL)
+    {
+
+        fprintf(stderr,"Error Opening file\n");
+        exit(0);
+    }
+    size_t len = 0;
+    ssize_t flag;
+    char* line = NULL;
+    while( (flag = getline(&line , &len ,file )) != -1 )
+    {
+
+        char *token;
+        char **tokens;
+        // edw tsekarw an h grammh mou exei megethos megalutero apo ena
+        if (strlen(line) < 3)
+        {
+            continue;
+        }
+
+        tokens = malloc(3 * sizeof(char *));
+        token = strtok(line, "|");
+        tokens[0]=strdup(token);
+
+        token = strtok(NULL, "|");
+        tokens[1] =strdup(token);
+
+        token = strtok(NULL, "\n");
+        tokens[2] =strdup(token);
+
+        ///debugging printf("%s|%s|%s\n",tokens[0],tokens[1],tokens[2]);
+
+
+
+
+        int total_ques=0;
+        for(i=0; i<strlen(tokens[1]); i++)
+        {
+            if(line[i+strlen(tokens[0])] =='&')
+            {
+                total_ques ++;
+            }
+        }
+        total_ques++;
+
+        ///debugging printf("Exw sunolika %d sxeseis kai %d queries\n\n",relations_to_check,total_ques);
+        //edw prepei na dhmiourghsw enan pinaka total_ques megethous opou tha balw mesa ena ena ta erwthmata pou mou zhtaei
+        struct preds *predicates = malloc(total_ques*sizeof(struct preds));
+
+        char* temp_str =strdup(tokens[1]);
+
+        int counter=0,erwthmata=0;
+
+        flag = 0;
+        int flag1 =0;
+        char *rest = NULL;
+        token = strtok_r(tokens[1],"&",&rest);
+
+        for(j=0; j<strlen(temp_str); j++)
+        {
+            //arxika tha brw thn praksi sugkrisis pou prokeitai na kanw.
+            if(temp_str[j] == '<' || temp_str[j] == '>' || temp_str[j]== '=')
+            {
+                predicates[counter].op = temp_str[j];
+                ///debugging printf("%c\n",predicates[counter].op);
+                counter ++;
+                erwthmata ++;
+            }
+        }
+        //Init values to -1
+        for(i =0; i<total_ques; i++)
+        {
+            predicates[i].relation1 =-1;
+            predicates[i].relation2 =-1;
+            predicates[i].num =-1;
+            predicates[i].colum1=-1;
+            predicates[i].colum2=-1;
+            predicates[i].prio = -1;
+        }
+        /////////////////////////
+        counter =0;
+        while (erwthmata > 0)
+        {
+            for(i =0; i<strlen(token); i++)
+            {
+                if(token[i] == '=' || token[i] == '>' || token[i] =='<')
+                {
+                    flag = 1;
+                }
+                if(token[i] == '.' && predicates[counter].op == '=' && flag==0)
+                {
+                    token = strtok(token,".");
+                    predicates[counter].relation1 = atoi(token);
+                    token=strtok(NULL,"=");
+                    predicates[counter].colum1 = atoi(token);
+
+        //            printf("%d.%d %c ",predicates[counter].relation1,predicates[counter].colum1,predicates[counter].op);
+
+                    token = strtok(NULL , "&");
+
+                    for(j =0; j<strlen(token); j++)
+                    {
+                        if(token[j] == '.')
+                        {
+                            token = strtok(token,".");
+                            predicates[counter].relation2 = atoi(token);
+                            token= strtok(NULL,"&");
+                            predicates[counter].colum2 = atoi(token);
+
+          //                  printf("%d.%d \n",predicates[counter].relation2,predicates[counter].colum2);
+                            flag1 = 1;
+                        }
+                    }
+
+                    if(flag1 == 0)
+                    {
+                        predicates[counter].num = atoi(token);
+            //            printf("%d\n",predicates[counter].num);
+                    }
+                    counter ++;
+                }
+                else if(token[i] == '.' && (predicates[counter].op == '>' || predicates[counter].op == '<') && flag == 0)
+                {
+                    token = strtok(token,".");
+                    predicates[counter].relation1 = atoi(token);
+                    if(predicates[counter].op == '>')
+                    {
+                        token = strtok(NULL,">");
+                    }
+                    else if(predicates[counter].op == '<')
+                    {
+                        token = strtok(NULL,"<");
+                    }
+              //      predicates[counter].colum1 = atoi(token);
+
+                //    printf("%d.%d %c " ,predicates[counter].relation1 , predicates[counter].colum1, predicates[counter].op );
+                    token = strtok(NULL,"&");
+                    predicates[counter].num = atoi(token);
+               //     printf("%d\n", predicates[counter].num);
+                    counter ++;
+                }
+                if(flag == 1)
+                {
+                    if(predicates[counter].op == '=')
+                    {
+                        token = strtok(token,"=");
+                        predicates[counter].num = atoi(token);
+                        token = strtok(NULL,".");
+                        predicates[counter].relation1  = atoi(token);
+                        token = strtok(NULL,"&");
+                        predicates[counter].colum1 = atoi(token);
+                  //      printf("%d %c %d.%d\n" , predicates[counter].num , predicates[counter].op, predicates[counter].relation1,predicates[counter].colum1);
+                        counter ++;
+                        flag = 0;
+                    }
+                    else if(predicates[counter].op == '>')
+                    {
+                        token = strtok(token,"<");
+                        predicates[counter].num = atoi(token);
+                        token = strtok(NULL,".");
+                        predicates[counter].relation1  = atoi(token);
+                        token = strtok(NULL,"&");
+                        predicates[counter].colum1 = atoi(token);
+                    //    printf("%d %c %d.%d\n" , predicates[counter].num , predicates[counter].op, predicates[counter].relation1,predicates[counter].colum1);
+                        counter ++;
+                        flag = 0;
+                    }
+                    else if(predicates[counter].op == '<')
+                    {
+                        token = strtok(token,"<");
+                        predicates[counter].num = atoi(token);
+                        token = strtok(NULL,".");
+                        predicates[counter].relation1  = atoi(token);
+                        token = strtok(NULL,"&");
+                        predicates[counter].colum1 = atoi(token);
+                      //  printf("%d %c %d.%d\n" , predicates[counter].num , predicates[counter].op, predicates[counter].relation1,predicates[counter].colum1);
+                        counter ++;
+                        flag = 0;
+                    }
+
+                }
+            }
+            if(erwthmata != 1)
+            {
+                token = strtok_r(rest ,"&",&rest);
+            }
+            erwthmata --;
+            flag1 = 0;
+        }
+
+
+        int *prio;
+        prio  = select_pred(total_ques,predicates);
+//        for(int i=0; i<total_ques; i++)
+//        {
+//            printf("%d ",prio[i]);
+//        }
+//        printf("\n\n\n"
+//               "next\n");
+
+
+
+        for(int i=0; i<3; i++)
+        {
+            free(tokens[i]);
+
+        }
+        free(tokens);
+        free(prio);
+        free(temp_str);
+        free(predicates);
+    }
+    free(line);
+    fclose(file);
+
+}
+
+int * select_pred(int total_preds , struct preds *my_preds)
+{
+    int* prio_array = malloc(total_preds*(sizeof(int)));
+    int i,j,prio=0;
+    int here = 0;
+    for(i =0; i<total_preds; i++)
+    {
+        prio_array[i] = -1;
+    }
+
+    for(i =0; i<total_preds; i++)
+    {
+        if(my_preds[i].num != -1)
+        {
+            for(j=0; j<total_preds; j++)
+            {
+                if(i != j)
+                {
+                    //edw tsekarw an exw kapoia sugkrisi me ari9mo kai tsekarw an h sxesh epenalambanetai ths dinw proteraiothta
+                    if(my_preds[i].relation1 == my_preds[j].relation1 || my_preds[i].relation1 == my_preds[j].relation2
+                       || my_preds[i].relation2 == my_preds[j].relation1 || my_preds[i].relation2 == my_preds[j].relation2)
+                    {
+                        if(my_preds[i].prio == -1)
+                        {
+                            my_preds[i].prio = prio;
+                            prio ++;
+                            my_preds[j].prio = prio;
+                            prio++;
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if(prio == 0)//den exw oute mia praksi tupou >,< ,=
+    {
+        for(i =0; i< total_preds; i++)
+        {
+            for(j=0; j<total_preds; j++)
+            {
+                if(i != j)
+                {
+                    //edw tsekarw an exw kapoia sugkrisi me ari9mo kai tsekarw an h sxesh epenalambanetai ths dinw proteraiothta
+                    if(my_preds[i].relation1 == my_preds[j].relation1 || my_preds[i].relation1 == my_preds[j].relation2
+                       || my_preds[i].relation2 == my_preds[j].relation1 || my_preds[i].relation2 == my_preds[j].relation2)
+                    {
+                        if(my_preds[i].prio == -1)
+                        {
+                            my_preds[i].prio=prio;
+                            prio ++;
+                            my_preds[j].prio=prio;
+                            prio++;
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        if(my_preds[i].prio == -1)
+                        {
+                            my_preds[i].prio =prio;
+                            prio++;
+                            continue;
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+    for(i =0; i< total_preds; i++)
+    {
+        if(my_preds[i].prio == -1)
+        {
+            my_preds[i].prio = prio;
+            prio++;
+        }
+    }
+    for(i = 0; i< total_preds; i++)
+    {
+        for(j=0; j<total_preds; j++)
+        {
+            if(my_preds[j].prio == i)
+            {
+                prio_array[i]= j;
+            }
+        }
+    }
+    return prio_array;
+}
