@@ -10,11 +10,11 @@
 
 column_data Sort(column_data);
 void sorting (column_data *,column_data *,int, int , int , int);
-void Join(column_data , column_data );
+Result * Join(column_data , column_data );
 relation * read_file(char*,int *);
 uint64_t * loadRelation(char* );
 void queries_analysis(char * );
-int * select_pred(int , struct preds*);
+int * select_pred(int , char *,struct preds *);
 
 
 
