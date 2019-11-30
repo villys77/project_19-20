@@ -13,8 +13,10 @@ void sorting (column_data *,column_data *,int, int , int , int);
 Result * Join(column_data , column_data );
 relation * read_file(char*,int *);
 uint64_t * loadRelation(char* );
-void queries_analysis(char * );
-int * select_pred(int , char *,struct preds *);
+void queries_analysis(char * ,relation*);
+int * select_pred(int , char *,int*,struct preds *);
+column_data load_column_data(relation *, int rel,int col);
+void Equalizer(column_data array,int b_size,int given_num,int given_mode);
 
 
 

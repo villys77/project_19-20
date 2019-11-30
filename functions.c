@@ -553,7 +553,7 @@ uint64_t * loadRelation(char* fileName)
 }
 
 
-void queries_analysis(char * FileToOpen)
+void queries_analysis(char * FileToOpen,relation * relations)
 {
 
     int i,j;
@@ -619,7 +619,6 @@ void queries_analysis(char * FileToOpen)
             mapping[i]=id;
 
         }
-
         free(sxeseis);
 
 
@@ -643,29 +642,45 @@ void queries_analysis(char * FileToOpen)
         char* pre =strdup(tokens[1]);
         int *prio;
         struct preds* predicates=malloc(sizeof(struct preds)*total_ques);
-        prio  = select_pred(total_ques,pre,predicates);
+        prio  = select_pred(total_ques,pre,mapping,predicates);
+        free(mapping);
+        free(pre);
 
-//        for(int i=0; i<total_ques; i++)
-//        {
-//            printf("%d ",prio[i]);
-//        }
-//        printf("\n\n\n"
-//               "next\n");
 //
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-        for(int i=0; i<3; i++)
-        {
-            free(tokens[i]);
 
+printf("%s | %s | %s\n",tokens[0],tokens[1],tokens[2]);
+
+        for(int i= 0; i< total_ques; i++)
+        {
+            printf("%d %d %c %d %d %d %d\n",predicates[i].relation1,predicates[i].colum1,predicates[i].op,predicates[i].relation2,predicates[i].colum2,predicates[i].num,predicates[i].prio);
+//            if(predicates[prio[j]].num == -1)//exw join.
+//            {
+//
+//                column_data column1=load_column_data(relations,predicates[prio[j].relation1],predicates[prio[j]].colum1);
+//                column_data column2=load_column_data(relations,predicates[prio[j].relation2],predicates[prio[j]].colum2);
+//                column_data sorted_column1=Sort(column1);
+//                column_data sorted_column2=Sort(column2);
+//                //Join(sorted_column1,sorted_column2);
+//
+//            }
         }
+
+        printf("\n\n\n");
+
+
+
+
+
+        free(tokens[0]);
+        free(tokens[1]);
+        free(tokens[2]);
         free(tokens);
         free(prio);
-        free(pre);
         free(predicates);
-        free(mapping);
 
     }
     free(line);
@@ -673,7 +688,7 @@ void queries_analysis(char * FileToOpen)
 
 }
 
-int * select_pred(int total_preds , char * temp_str,struct preds * predicates)
+int * select_pred(int total_preds , char * temp_str,int * mapping,struct preds * predicates)
 {
     //struct preds *predicates = malloc(total_preds*sizeof(struct preds));
 
@@ -720,7 +735,7 @@ int * select_pred(int total_preds , char * temp_str,struct preds * predicates)
             if(token[i] == '.' && predicates[counter].op == '=' && flag==0)
             {
                 token = strtok(token,".");
-                predicates[counter].relation1 = atoi(token);
+                predicates[counter].relation1 =mapping[atoi(token)];
                 token=strtok(NULL,"=");
                 predicates[counter].colum1 = atoi(token);
 
@@ -733,7 +748,7 @@ int * select_pred(int total_preds , char * temp_str,struct preds * predicates)
                     if(token[j] == '.')
                     {
                         token = strtok(token,".");
-                        predicates[counter].relation2 = atoi(token);
+                        predicates[counter].relation2 = mapping[atoi(token)];
                         token= strtok(NULL,"&");
                         predicates[counter].colum2 = atoi(token);
 
@@ -752,7 +767,7 @@ int * select_pred(int total_preds , char * temp_str,struct preds * predicates)
             else if(token[i] == '.' && (predicates[counter].op == '>' || predicates[counter].op == '<') && flag == 0)
             {
                 token = strtok(token,".");
-                predicates[counter].relation1 = atoi(token);
+                predicates[counter].relation1 = mapping[atoi(token)];
                 if(predicates[counter].op == '>')
                 {
                     token = strtok(NULL,">");
@@ -776,7 +791,7 @@ int * select_pred(int total_preds , char * temp_str,struct preds * predicates)
                     token = strtok(token,"=");
                     predicates[counter].num = atoi(token);
                     token = strtok(NULL,".");
-                    predicates[counter].relation1  = atoi(token);
+                    predicates[counter].relation1  = mapping[atoi(token)];
                     token = strtok(NULL,"&");
                     predicates[counter].colum1 = atoi(token);
            //               printf("%d %c %d.%d\n" , predicates[counter].num , predicates[counter].op, predicates[counter].relation1,predicates[counter].colum1);
@@ -788,7 +803,7 @@ int * select_pred(int total_preds , char * temp_str,struct preds * predicates)
                     token = strtok(token,"<");
                     predicates[counter].num = atoi(token);
                     token = strtok(NULL,".");
-                    predicates[counter].relation1  = atoi(token);
+                    predicates[counter].relation1  = mapping[atoi(token)];
                     token = strtok(NULL,"&");
                     predicates[counter].colum1 = atoi(token);
            //             printf("%d %c %d.%d\n" , predicates[counter].num , predicates[counter].op, predicates[counter].relation1,predicates[counter].colum1);
@@ -800,7 +815,7 @@ int * select_pred(int total_preds , char * temp_str,struct preds * predicates)
                     token = strtok(token,"<");
                     predicates[counter].num = atoi(token);
                     token = strtok(NULL,".");
-                    predicates[counter].relation1  = atoi(token);
+                    predicates[counter].relation1  = mapping[atoi(token)];
                     token = strtok(NULL,"&");
                     predicates[counter].colum1 = atoi(token);
            //           printf("%d %c %d.%d\n" , predicates[counter].num , predicates[counter].op, predicates[counter].relation1,predicates[counter].colum1);
@@ -908,4 +923,55 @@ int * select_pred(int total_preds , char * temp_str,struct preds * predicates)
     }
     free(str);
     return prio_array;
+}
+
+column_data load_column_data(relation * relations, int rel,int column_id)
+{
+
+    column_data col;
+    col.num_tuples=relations[rel].num_tuples;
+    col.tuples=malloc(sizeof(tuple)*col.num_tuples);
+    for(int i=0; i< col.num_tuples; i++)
+    {
+        col.tuples[i].payload=i;
+        col.tuples[i].key=relations[rel].data[column_id*col.num_tuples+i];
+    }
+    return col;
+}
+
+void Equalizer(column_data array,int b_size,int given_num,int given_mode)
+{
+    //pairnw ena array kai prepei na to diatreksw olo wste na brw tis times pou einai megaluteres 'h mikroteres 'h ises apo kapoion ari8mo
+    //orizw mode1 gia to = , mode 2 gia to > kai mode 3 gia to <
+    int i;
+    if(given_mode == 1)
+    {
+        for(i = 0 ; i < b_size; i++)
+        {
+            if(array.tuples[i].payload == given_num)
+            {
+                //bazw sthn endiamesh
+            }
+        }
+    }
+    if(given_mode == 2)
+    {
+        for(i=0; i< b_size; i++)
+        {
+            if(array.tuples[i].payload > given_num)
+            {
+                //bazw sthn endiamesh
+            }
+        }
+    }
+    if ( given_mode ==3)
+    {
+        for(i =0; i< b_size; i++)
+        {
+            if(array.tuples[i].payload < given_num)
+            {
+                //bazw sthn endiamesh
+            }
+        }
+    }
 }

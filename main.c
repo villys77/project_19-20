@@ -18,7 +18,7 @@ int main(int argc,char **argv)
     int rels;
     relation *relations=read_file(argv[1],&rels); ////pinakas apo relations
 
-    queries_analysis(argv[2]);
+    queries_analysis(argv[2],relations);
 
     for(int i=0; i<rels; i++)
     {
