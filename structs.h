@@ -51,7 +51,7 @@ typedef struct Result{
 }Result;
 
 
-struct preds{
+struct Predicates{
     int relation1; // h prwth sxesh
     int colum1; // h kolona apo thn prwth sxesh
     int relation2; // h deyterh sxesh
