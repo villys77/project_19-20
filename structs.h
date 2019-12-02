@@ -61,4 +61,11 @@ struct Predicates{
     int prio;
 };
 
+
+typedef struct Intermediate_Result
+{
+    int* relResults; ///posa apotelesmata exei to tade relation
+    int** resArray;  ///ta apotelesmata
+}Intermediate_Result;
+
 #endif //PROJECT_STRUCTS_H

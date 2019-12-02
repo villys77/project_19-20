@@ -13,7 +13,8 @@
 #include <unistd.h>
 #include "functions.h"
 #include "structs.h"
-
+#include "Result.h"
+#include "Intermediate_Result.h"
 
 #define n 8
 
@@ -280,94 +281,6 @@ void sorting(column_data * array0, column_data * array1 ,int start,int end,int w
 }
 
 
-Result *ListInit()
-{
-    Result *node = (Result *)malloc(sizeof(Result));
-    node->first=NULL;
-    node->current=NULL;
-
-    return node;
-}
-
-void InsertResult(uint64_t R_id,uint64_t S_id,Result *head)
-{
-
-    if(head->current==NULL) // adeia
-    {
-        head->current = (ResultNode *)malloc(sizeof(ResultNode));
-        head->first = head->current ;
-        head->first->next = NULL;
-        head->first->counter=0;
-    }
-    else
-    {
-        if(head->current->counter == SIZE_NODE-1)
-        {
-            head->current->next = (ResultNode *)malloc(sizeof(ResultNode));
-            head->current = head->current->next;
-            head->current->next=NULL;
-            head->current->counter=0;
-        }
-    }
-    head->current->buffer[head->current->counter][0] = R_id ;
-    head->current->buffer[head->current->counter][1] = S_id ;
-    head->current->counter++;
-}
-
-void PrintResults(Result *head)
-{
-    FILE *fp;
-    fp = fopen("Results.csv", "w");// "w" means that we are going to write on this file
-    ResultNode *temp;
-    int i,count=1;
-    temp = head->first;
-    if(temp==NULL)
-    {
-        printf("There are no matches.\n");
-        return ;
-    }
-    while(temp!=NULL)
-    {
-        for(i=0;i<temp->counter ;i++)
-        {
-            fprintf(fp, "|%" PRIu64 "|%" PRIu64 "|\n", temp->buffer[i][0],temp->buffer[i][1]);
-            count++;
-        }
-        temp = temp->next;
-    }
-    fclose(fp);
-
-}
-
-//////////////////////////////////
-void freelist(Result *head)
-{
-    if(head==NULL)
-    {
-        return;
-    }
-    else
-    {
-        if(head->first == NULL)
-        {
-            free(head);
-            return;
-        }
-        else
-        {
-            ResultNode* temp=(ResultNode*)malloc(sizeof(ResultNode*));
-            temp = head->first;
-            ResultNode *going_to_free;
-            while(temp!=NULL)
-            {
-                going_to_free = temp;
-                temp = temp->next;
-                free(going_to_free);
-            }
-            free(head);
-        }
-    }
-}
 
 Result * Join(column_data R, column_data S )
 {
@@ -507,7 +420,6 @@ relation * read_file(char * filename,int *rels)
             relations[i].data=loadRelation(path);
             relations[i].num_tuples=relations[i].data[0];
             relations[i].num_columns=relations[i].data[1];
-            int size=relations[i].num_tuples*relations[i].num_columns;
             relations[i].data+=2;
             free(path);
 
@@ -653,36 +565,10 @@ void queries_analysis(char * FileToOpen,relation * relations)
         free(mapping);
         free(pre);
 
-//
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
-//printf("%s | %s | %s\n",tokens[0],tokens[1],tokens[2]);
-
-        for(int j= 0; j< total_ques; j++)
-        {
-            if(predicates[prio[j]].num == -1)//exw join.
-            {
-          //      printf("%d.%d = %d.%d \n",predicates[prio[j]].relation1,predicates[prio[j]].colum1,predicates[prio[j]].relation2,predicates[prio[j]].colum2);
-
-                column_data column1=load_column_data(relations,predicates[prio[j]].relation1,predicates[prio[j]].colum1);
-                column_data column2=load_column_data(relations,predicates[prio[j]].relation2,predicates[prio[j]].colum2);
-                column_data sorted_column1=Sort(column1);
-                column_data sorted_column2=Sort(column2);
-                //Join(sorted_column1,sorted_column2);
-                //printf("%lu %lu\n",column1.tuples[0].key,column1.tuples[column1.num_tuples-1].key);
-                //printf("%lu %lu\n",column2.tuples[0].key,column2.tuples[column2.num_tuples-1].key);
-                free(sorted_column1.tuples);
-                free(sorted_column2.tuples);
-
-            }
-        }
-
-        //printf("\n\n\n");
-
-
+        exec_predicates(relations,predicates,prio,total_ques,relations_to_check);
 
 
 
@@ -699,6 +585,157 @@ void queries_analysis(char * FileToOpen,relation * relations)
     fclose(file);
 
 }
+
+
+
+void exec_predicates(relation * relations,struct Predicates * predicates,int * prio,int total_ques,int relations_to_check)
+{
+    Intermediate_Result* IR = create_Intermediate_Result(relations_to_check);
+
+        for(int j= 0; j< total_ques; j++)
+    {
+        if(predicates[prio[j]].num == -1)//exw join.
+        {
+            //      printf("%d.%d = %d.%d \n",predicates[prio[j]].relation1,predicates[prio[j]].colum1,predicates[prio[j]].relation2,predicates[prio[j]].colum2);
+
+            column_data column1=load_column_data(relations,predicates[prio[j]].relation1,predicates[prio[j]].colum1);
+            column_data column2=load_column_data(relations,predicates[prio[j]].relation2,predicates[prio[j]].colum2);
+            column_data sorted_column1=Sort(column1);
+            column_data sorted_column2=Sort(column2);
+            //Join(sorted_column1,sorted_column2);
+             //printf("%lu %lu\n",column1.tuples[0].key,column1.tuples[column1.num_tuples-1].key);
+            //printf("%lu %lu\n",column2.tuples[0].key,column2.tuples[column2.num_tuples-1].key);
+            free(sorted_column1.tuples);
+            free(sorted_column2.tuples);
+
+        }
+    }
+
+    return;
+    for(int j= 0; j< total_ques; j++)
+    {
+        if(predicates[prio[j]].num == -1)//exw join.
+        {
+//to relation 1 uparxei hdh sthn endiamesh domi opote prepei na parw t stoixeia pou exoun hdh graftei ekei
+            if((IR ->relResults[predicates[prio[j]].relation1] == 0) || (IR->relResults[predicates[prio[j]].relation2] == 0))
+            {
+                printf("mpainw edw kai prepei na kanw kati \n");
+                continue;
+            }
+            if(IR->relResults[predicates[prio[j]].relation1] != -1) //an uparxei sthn endiamesh dinw auto
+            {
+
+                //tsekarw an uparxei h deuterh mesa sthn endiamesh domh
+                //an oxi pairnei ta kanonika ths
+                if(IR->relResults[predicates[prio[j]].relation2] == -1)//auto edw exw peiraksei
+                {
+
+                }/////
+                else//pros8etw auto edw. Auto to else shmainei oti kai h deuterh sxesh exei stoixeia mesa sthn endiamesh domh
+                {
+
+                } //
+            }
+                //edw tsekarw thn periptwsh na mhn uparxei mesa sthn endiamesh h prwth sxesh alla mporei na einai h deyterh
+            else///
+            {
+                // kai twra tsekarw pali gia thn deyterh
+                if(IR->relResults[predicates[prio[j]].relation2] == -1)// den uparxei oute auth
+                {
+
+                }
+                else // dhladh exei mesa sthn endiamesh kati
+                {
+
+
+                }
+            }////
+
+//            result *rhj=radish_hash_join(relation1,relation1.num_tuples,relation2,relation2.num_tuples);
+//            printf("Ta sunolika matches pou exoun ginei einai : %d \n",num_of_matches);
+//            //auto gia to rel1
+//            end_domh =JoinUpdate(end_domh ,num_of_matches ,rhj ,predicates[prio[j]].relation1,0,relations_to_check );
+//            // auto gia to rel2
+//            end_domh =JoinUpdate(end_domh ,num_of_matches ,rhj ,predicates[prio[j]].relation2,1,relations_to_check);
+
+        }
+        else // exw sugkrish me enan ari8mo
+        {
+            if(predicates[prio[j]].op == '<')
+            {
+            }
+            else if(predicates[prio[j]].op == '=')
+            {
+            }
+            else if( predicates[prio[j]].op == '>')
+            {
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+}
+
+column_data load_column_data(relation * relations, int rel,int column_id)
+{
+
+    column_data col;
+    col.num_tuples=relations[rel].num_tuples;
+    col.tuples=malloc(sizeof(tuple)*col.num_tuples);
+    for(int i=0; i< col.num_tuples; i++)
+    {
+        col.tuples[i].payload=i;
+        col.tuples[i].key=relations[rel].data[column_id*col.num_tuples+i];
+    }
+    return col;
+}
+
+void Equalizer(column_data array,int b_size,int given_num,int given_mode)
+{
+    //pairnw ena array kai prepei na to diatreksw olo wste na brw tis times pou einai megaluteres 'h mikroteres 'h ises apo kapoion ari8mo
+    //orizw mode1 gia to = , mode 2 gia to > kai mode 3 gia to <
+    int i;
+    if(given_mode == 1)
+    {
+        for(i = 0 ; i < b_size; i++)
+        {
+            if(array.tuples[i].payload == given_num)
+            {
+                //bazw sthn endiamesh
+            }
+        }
+    }
+    if(given_mode == 2)
+    {
+        for(i=0; i< b_size; i++)
+        {
+            if(array.tuples[i].payload > given_num)
+            {
+                //bazw sthn endiamesh
+            }
+        }
+    }
+    if ( given_mode ==3)
+    {
+        for(i =0; i< b_size; i++)
+        {
+            if(array.tuples[i].payload < given_num)
+            {
+                //bazw sthn endiamesh
+            }
+        }
+    }
+}
+
+
+
+
 
 struct Predicates *predicates_analysis(int total_preds,char * temp_str ,int * mapping)
 {
@@ -940,54 +977,3 @@ int * predicates_priority(int total_preds,struct Predicates *predicates)
     return prio_array;
 }
 
-
-column_data load_column_data(relation * relations, int rel,int column_id)
-{
-
-    column_data col;
-    col.num_tuples=relations[rel].num_tuples;
-    col.tuples=malloc(sizeof(tuple)*col.num_tuples);
-    for(int i=0; i< col.num_tuples; i++)
-    {
-        col.tuples[i].payload=i;
-        col.tuples[i].key=relations[rel].data[column_id*col.num_tuples+i];
-    }
-    return col;
-}
-
-void Equalizer(column_data array,int b_size,int given_num,int given_mode)
-{
-    //pairnw ena array kai prepei na to diatreksw olo wste na brw tis times pou einai megaluteres 'h mikroteres 'h ises apo kapoion ari8mo
-    //orizw mode1 gia to = , mode 2 gia to > kai mode 3 gia to <
-    int i;
-    if(given_mode == 1)
-    {
-        for(i = 0 ; i < b_size; i++)
-        {
-            if(array.tuples[i].payload == given_num)
-            {
-                //bazw sthn endiamesh
-            }
-        }
-    }
-    if(given_mode == 2)
-    {
-        for(i=0; i< b_size; i++)
-        {
-            if(array.tuples[i].payload > given_num)
-            {
-                //bazw sthn endiamesh
-            }
-        }
-    }
-    if ( given_mode ==3)
-    {
-        for(i =0; i< b_size; i++)
-        {
-            if(array.tuples[i].payload < given_num)
-            {
-                //bazw sthn endiamesh
-            }
-        }
-    }
-}

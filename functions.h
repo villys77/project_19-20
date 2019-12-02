@@ -18,7 +18,7 @@ struct Predicates* predicates_analysis(int,char *,int *);
 int * predicates_priority(int,struct Predicates *);
 column_data load_column_data(relation *, int rel,int col);
 void Equalizer(column_data array,int b_size,int given_num,int given_mode);
-
+void exec_predicates(relation *,struct Predicates *,int * ,int, int);
 
 
 Result* ListInit();
