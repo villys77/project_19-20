@@ -14,17 +14,12 @@ Result * Join(column_data , column_data );
 relation * read_file(char*,int *);
 uint64_t * loadRelation(char* );
 void queries_analysis(char * ,relation*);
-struct Predicates* predicates_analysis(int,char *,int *);
+struct Predicates* predicates_analysis(int,char *);
 int * predicates_priority(int,struct Predicates *);
 column_data load_column_data(relation *, int rel,int col);
-void Equalizer(column_data array,int b_size,int given_num,int given_mode);
-void exec_predicates(relation *,struct Predicates *,int * ,int, int);
 
-
-Result* ListInit();
-void InsertResult(uint64_t,uint64_t,Result*);
-void PrintResults(Result*);
-void freelist(Result*);
+int * Equalizer(column_data array,int given_num,int given_mode,int *matches);
+void exec_predicates(relation *,struct Predicates *,int * ,int, int,int *);
 
 
 void swap(uint64_t * a, uint64_t * b);

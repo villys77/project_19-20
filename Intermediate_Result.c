@@ -24,6 +24,7 @@ Intermediate_Result* create_Intermediate_Result(int numRel)
 }
 void PrintMe(Intermediate_Result* mid,int allRels,int total_matches)
 {
+    printf("%d %d\n",allRels,total_matches);
     int i, j;
     for (i=0; i<allRels; i++)
     {
@@ -31,82 +32,55 @@ void PrintMe(Intermediate_Result* mid,int allRels,int total_matches)
         {
             for(j=0; j<total_matches; j++)
             {
-                printf("%d\n",mid->resArray[i][j]);
+               printf("%d\n",mid->resArray[i][j]);
             }
         }
     }
 }
 
-Intermediate_Result* FilterUpdate (Intermediate_Result* mid, int newResults , int rel,int allRels)
+Intermediate_Result* FilterUpdate (Intermediate_Result* mid, int newResults ,int * filter, int rel,int allRels)
 {
-//  int i,c,j;
-//  c =0;
-//  if(mid->relResults[rel] == -1)
-//  { //edw shmainei oti den exei uparxoun alla endiamesa apotelesmata gia auth th sxesh
-//    //ara gia kathe mia thesi tou resArray[rel][i] bazw ena apo ti lista.Prosexw h lista na exei na dwsei stoixeia omws
-//    mid->relResults[rel]= newResults;
-//    mid->resArray[rel] = malloc(newResults*sizeof(int));
-//    while (tmp != NULL)
-//    {
-//        for(j = 0; j<tmp->counter; j++ )
-//        {
-//            if( c == newResults)
-//            {
-//                return mid;
-//            }
-//            mid->resArray[rel][c] = tmp->buffer[j];
-//            c++;
-//        }
-//        if(newResults >= SIZE_NODE)
-//        {
-//            newResults -= SIZE_NODE;
-//        }
-//        tmp = tmp->next;
-//    }
-//    return mid;
-//  }
-//  else //auto shmainei oti h sxesh auth exei hdh grammena stoixeia mesa sti endiamesh domi opote prepei
-//  //annanewthoun kai ola ta alla apo tis alles sxeseis na meinoun opws einai.
-//  {
-//    Intermediate_Result *new_mid = create_Intermediate_Result(allRels);
-//    //twra exw ftiaksei mia arxika kenh endiamesh domh kai prepei na thn gemisw me ta katallhla
-//    //arxika bazw auta pou einai kainourgia
-//    new_mid ->relResults[rel] = newResults;
-//    new_mid->resArray[rel] = malloc(newResults*sizeof(int));
-//
-//    while(tmp!=NULL)//prepei na grapsw sthn thesi mou ta nea stoixeia
-//    {
-//        for(j = 0; j< SIZE_NODE; j++)
-//        {
-//            if(j == newResults)
-//            {
-//                return new_mid;
-//            }
-//            new_mid->resArray[rel][c] = tmp->buffer[j];
-//            c++;
-//        }
-//        if(newResults >= SIZE_NODE)
-//        {
-//            newResults -= SIZE_NODE;
-//        }
-//        tmp = tmp -> next;
-//    }
-//    for(i = 0; i < allRels; i++) // antigrafw ola ta stoixeia pou eixa hdh dimiourghsei.
-//    {
-//      if (i!=rel && mid->relResults[i] != -1)
-//      {
-//        //edw prepei na balw ta proigoumena stoixeia pou eixe mesa h endiamesh mou.
-//        new_mid -> relResults[i] = mid -> relResults[i];
-//        new_mid->resArray[i] = malloc(new_mid->relResults[i]*sizeof(int));
-//        printf("%d \n" , new_mid -> relResults[i]);
-//        for ( j =0 ; j< new_mid->relResults[i]; j++)
-//        {
-//          new_mid->resArray[i][j] = mid->resArray[i][j];
-//        }
-//      }
-//    }
-//    return new_mid;
-//  }
+    if(mid->relResults[rel] == -1)
+    { //edw shmainei oti den exei uparxoun alla endiamesa apotelesmata gia auth th sxesh
+    //ara gia kathe mia thesi tou resArray[rel][i] bazw ena apo ti lista.Prosexw h lista na exei na dwsei stoixeia omws
+        mid->relResults[rel]= newResults;
+        mid->resArray[rel] = malloc(newResults*sizeof(int));
+        for(int i=0; i<newResults; i++)
+        {
+            mid->resArray[rel][i]=filter[i];
+        }
+        //memcpy(mid->resArray[rel],filter,newResults);
+        return mid;
+    }
+    else //auto shmainei oti h sxesh auth exei hdh grammena stoixeia mesa sti endiamesh domi opote prepei
+  //annanewthoun kai ola ta alla apo tis alles sxeseis na meinoun opws einai.
+    {
+        Intermediate_Result *new_mid = create_Intermediate_Result(allRels);
+        //twra exw ftiaksei mia arxika kenh endiamesh domh kai prepei na thn gemisw me ta katallhla
+        //arxika bazw auta pou einai kainourgia
+        new_mid ->relResults[rel] = newResults;
+        new_mid->resArray[rel] = malloc(newResults*sizeof(int));
+        for(int i=0; i<newResults; i++)
+        {
+            mid->resArray[rel][i]=filter[i];
+        }
+
+        for(int i = 0; i < allRels; i++) // antigrafw ola ta stoixeia pou eixa hdh dimiourghsei.
+        {
+            if (i!=rel && mid->relResults[i] != -1)
+            {
+                //edw prepei na balw ta proigoumena stoixeia pou eixe mesa h endiamesh mou.
+                new_mid -> relResults[i] = mid -> relResults[i];
+                new_mid->resArray[i] = malloc(new_mid->relResults[i]*sizeof(int));
+                //printf("%d \n" , new_mid -> relResults[i]);
+                for (int  j =0 ; j< new_mid->relResults[i]; j++)
+                {
+                    new_mid->resArray[i][j] = mid->resArray[i][j];
+                }
+            }
+        }
+        return new_mid;
+    }
 }
 
 Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Result* List ,int rel1, int count, int allRels )

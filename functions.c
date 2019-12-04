@@ -559,16 +559,15 @@ void queries_analysis(char * FileToOpen,relation * relations)
         ///debugging printf("Exw sunolika %d sxeseis kai %d queries\n\n",relations_to_check,total_ques);
 
         char* pre =strdup(tokens[1]);
-        struct Predicates* predicates=predicates_analysis(total_ques,pre,mapping);
+        struct Predicates* predicates=predicates_analysis(total_ques,pre);
         int *prio=predicates_priority(total_ques,predicates);
 
-        free(mapping);
         free(pre);
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-        exec_predicates(relations,predicates,prio,total_ques,relations_to_check);
+        exec_predicates(relations,predicates,prio,total_ques,relations_to_check,mapping);
 
 
 
@@ -579,6 +578,7 @@ void queries_analysis(char * FileToOpen,relation * relations)
         free(tokens);
         free(prio);
         free(predicates);
+        free(mapping);
 
     }
     free(line);
@@ -588,70 +588,43 @@ void queries_analysis(char * FileToOpen,relation * relations)
 
 
 
-void exec_predicates(relation * relations,struct Predicates * predicates,int * prio,int total_ques,int relations_to_check)
+void exec_predicates(relation * relations,struct Predicates * predicates,int * prio,int total_ques,int relations_to_check,int * mapping)
 {
     Intermediate_Result* IR = create_Intermediate_Result(relations_to_check);
 
-        for(int j= 0; j< total_ques; j++)
-    {
-        if(predicates[prio[j]].num == -1)//exw join.
-        {
-            //      printf("%d.%d = %d.%d \n",predicates[prio[j]].relation1,predicates[prio[j]].colum1,predicates[prio[j]].relation2,predicates[prio[j]].colum2);
 
-            column_data column1=load_column_data(relations,predicates[prio[j]].relation1,predicates[prio[j]].colum1);
-            column_data column2=load_column_data(relations,predicates[prio[j]].relation2,predicates[prio[j]].colum2);
-            column_data sorted_column1=Sort(column1);
-            column_data sorted_column2=Sort(column2);
-            //Join(sorted_column1,sorted_column2);
-             //printf("%lu %lu\n",column1.tuples[0].key,column1.tuples[column1.num_tuples-1].key);
-            //printf("%lu %lu\n",column2.tuples[0].key,column2.tuples[column2.num_tuples-1].key);
-            free(sorted_column1.tuples);
-            free(sorted_column2.tuples);
-
-        }
-    }
-
-    return;
     for(int j= 0; j< total_ques; j++)
     {
         if(predicates[prio[j]].num == -1)//exw join.
         {
-//to relation 1 uparxei hdh sthn endiamesh domi opote prepei na parw t stoixeia pou exoun hdh graftei ekei
+            column_data column1;
+            column_data column2;
+
             if((IR ->relResults[predicates[prio[j]].relation1] == 0) || (IR->relResults[predicates[prio[j]].relation2] == 0))
             {
-                printf("mpainw edw kai prepei na kanw kati \n");
+                //printf("mpainw edw kai prepei na kanw kati \n");
                 continue;
             }
-            if(IR->relResults[predicates[prio[j]].relation1] != -1) //an uparxei sthn endiamesh dinw auto
+
+            if((IR->relResults[predicates[prio[j]].relation1]) != -1) //an uparxei sthn endiamesh dinw auto
             {
-
-                //tsekarw an uparxei h deuterh mesa sthn endiamesh domh
-                //an oxi pairnei ta kanonika ths
-                if(IR->relResults[predicates[prio[j]].relation2] == -1)//auto edw exw peiraksei
-                {
-
-                }/////
-                else//pros8etw auto edw. Auto to else shmainei oti kai h deuterh sxesh exei stoixeia mesa sthn endiamesh domh
-                {
-
-                } //
             }
-                //edw tsekarw thn periptwsh na mhn uparxei mesa sthn endiamesh h prwth sxesh alla mporei na einai h deyterh
-            else///
+            else
             {
-                // kai twra tsekarw pali gia thn deyterh
-                if(IR->relResults[predicates[prio[j]].relation2] == -1)// den uparxei oute auth
-                {
+                column1=load_column_data(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1);
+            }
 
-                }
-                else // dhladh exei mesa sthn endiamesh kati
-                {
+            if((IR->relResults[predicates[prio[j]].relation2]) != -1) //an uparxei sthn endiamesh dinw auto
+            {
+
+            }
+            else
+            {
+                column2=load_column_data(relations,mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2);
+            }
 
 
-                }
-            }////
-
-//            result *rhj=radish_hash_join(relation1,relation1.num_tuples,relation2,relation2.num_tuples);
+            //            result *rhj=radish_hash_join(relation1,relation1.num_tuples,relation2,relation2.num_tuples);
 //            printf("Ta sunolika matches pou exoun ginei einai : %d \n",num_of_matches);
 //            //auto gia to rel1
 //            end_domh =JoinUpdate(end_domh ,num_of_matches ,rhj ,predicates[prio[j]].relation1,0,relations_to_check );
@@ -661,26 +634,40 @@ void exec_predicates(relation * relations,struct Predicates * predicates,int * p
         }
         else // exw sugkrish me enan ari8mo
         {
+            int matches=0;
+            int * filter;
+            column_data column=load_column_data(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1);
+
+
             if(predicates[prio[j]].op == '<')
             {
+                filter=Equalizer(column,predicates[prio[j]].num,3,&matches);
+                IR = FilterUpdate(IR , matches,filter ,predicates[prio[j]].relation1,relations_to_check);
+
             }
             else if(predicates[prio[j]].op == '=')
             {
+                filter=Equalizer(column,predicates[prio[j]].num,1,&matches);
+                IR = FilterUpdate(IR , matches,filter ,predicates[prio[j]].relation1,relations_to_check);
+
             }
             else if( predicates[prio[j]].op == '>')
             {
+                filter=Equalizer(column,predicates[prio[j]].num,2,&matches);
+                IR = FilterUpdate(IR , matches,filter ,predicates[prio[j]].relation1,relations_to_check);
+
             }
+            free(column.tuples);
+            free(filter);
+
         }
+
     }
-
-
-
-
-
-
+    free(IR);
 
 
 }
+
 
 column_data load_column_data(relation * relations, int rel,int column_id)
 {
@@ -696,48 +683,90 @@ column_data load_column_data(relation * relations, int rel,int column_id)
     return col;
 }
 
-void Equalizer(column_data array,int b_size,int given_num,int given_mode)
+
+int * Equalizer(column_data array,int given_num,int given_mode,int *count)
 {
     //pairnw ena array kai prepei na to diatreksw olo wste na brw tis times pou einai megaluteres 'h mikroteres 'h ises apo kapoion ari8mo
     //orizw mode1 gia to = , mode 2 gia to > kai mode 3 gia to <
     int i;
     if(given_mode == 1)
     {
-        for(i = 0 ; i < b_size; i++)
+        for(i = 0 ; i < array.num_tuples; i++)
         {
-            if(array.tuples[i].payload == given_num)
+            if(array.tuples[i].key == given_num)
             {
-                //bazw sthn endiamesh
+                (*count)++;
             }
         }
     }
     if(given_mode == 2)
     {
-        for(i=0; i< b_size; i++)
+        for(i=0; i< array.num_tuples; i++)
         {
-            if(array.tuples[i].payload > given_num)
+            if(array.tuples[i].key > given_num)
             {
-                //bazw sthn endiamesh
+                (*count)++;
             }
         }
     }
     if ( given_mode ==3)
     {
-        for(i =0; i< b_size; i++)
+        for(i =0; i< array.num_tuples; i++)
         {
-            if(array.tuples[i].payload < given_num)
+            if(array.tuples[i].key < given_num)
             {
-                //bazw sthn endiamesh
+                (*count)++;
             }
         }
     }
+    int * filter=malloc(sizeof(int)*(*count));
+
+
+    if(given_mode == 1)
+    {
+        int j=0;
+        for(i = 0 ; i < array.num_tuples; i++)
+        {
+            if(array.tuples[i].key == given_num)
+            {
+                filter[j]=array.tuples[i].key;
+                j++;
+            }
+        }
+    }
+    if(given_mode == 2)
+    {
+        int j=0;
+        for(i=0; i< array.num_tuples; i++)
+        {
+            if(array.tuples[i].key > given_num)
+            {
+                filter[j]=array.tuples[i].key;
+                j++;
+            }
+        }
+    }
+    if ( given_mode ==3)
+    {
+        int j=0;
+        for(i =0; i< array.num_tuples; i++)
+        {
+            if(array.tuples[i].key < given_num)
+            {
+                filter[j]=array.tuples[i].key;
+                j++;
+            }
+        }
+    }
+    return filter;
 }
 
 
 
 
 
-struct Predicates *predicates_analysis(int total_preds,char * temp_str ,int * mapping)
+
+struct Predicates *predicates_analysis(int total_preds,char * temp_str )
 {
     struct Predicates* predicates=malloc(sizeof(struct Predicates)*total_preds);
 
@@ -784,7 +813,7 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str ,int * ma
             if(token[i] == '.' && predicates[counter].op == '=' && flag==0)
             {
                 token = strtok(token,".");
-                predicates[counter].relation1 =mapping[atoi(token)];
+                predicates[counter].relation1 =atoi(token);
                 token=strtok(NULL,"=");
                 predicates[counter].colum1 = atoi(token);
 
@@ -797,7 +826,7 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str ,int * ma
                     if(token[j] == '.')
                     {
                         token = strtok(token,".");
-                        predicates[counter].relation2 = mapping[atoi(token)];
+                        predicates[counter].relation2 = atoi(token);
                         token= strtok(NULL,"&");
                         predicates[counter].colum2 = atoi(token);
 
@@ -816,7 +845,7 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str ,int * ma
             else if(token[i] == '.' && (predicates[counter].op == '>' || predicates[counter].op == '<') && flag == 0)
             {
                 token = strtok(token,".");
-                predicates[counter].relation1 = mapping[atoi(token)];
+                predicates[counter].relation1 = atoi(token);
                 if(predicates[counter].op == '>')
                 {
                     token = strtok(NULL,">");
@@ -840,7 +869,7 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str ,int * ma
                     token = strtok(token,"=");
                     predicates[counter].num = atoi(token);
                     token = strtok(NULL,".");
-                    predicates[counter].relation1  = mapping[atoi(token)];
+                    predicates[counter].relation1  = atoi(token);
                     token = strtok(NULL,"&");
                     predicates[counter].colum1 = atoi(token);
                     //               printf("%d %c %d.%d\n" , predicates[counter].num , predicates[counter].op, predicates[counter].relation1,predicates[counter].colum1);
@@ -852,7 +881,7 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str ,int * ma
                     token = strtok(token,"<");
                     predicates[counter].num = atoi(token);
                     token = strtok(NULL,".");
-                    predicates[counter].relation1  = mapping[atoi(token)];
+                    predicates[counter].relation1  = atoi(token);
                     token = strtok(NULL,"&");
                     predicates[counter].colum1 = atoi(token);
                     //             printf("%d %c %d.%d\n" , predicates[counter].num , predicates[counter].op, predicates[counter].relation1,predicates[counter].colum1);
@@ -864,7 +893,7 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str ,int * ma
                     token = strtok(token,"<");
                     predicates[counter].num = atoi(token);
                     token = strtok(NULL,".");
-                    predicates[counter].relation1  = mapping[atoi(token)];
+                    predicates[counter].relation1  = atoi(token);
                     token = strtok(NULL,"&");
                     predicates[counter].colum1 = atoi(token);
                     //           printf("%d %c %d.%d\n" , predicates[counter].num , predicates[counter].op, predicates[counter].relation1,predicates[counter].colum1);
