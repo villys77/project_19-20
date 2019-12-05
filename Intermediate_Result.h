@@ -9,8 +9,8 @@
 
 Intermediate_Result* create_Intermediate_Result(int numRel);
 void PrintMe(Intermediate_Result* mid,int allRels,int total_matches);
-Intermediate_Result* FilterUpdate (Intermediate_Result* mid, int newResults ,int *filter, int rel,int allRels);
+Intermediate_Result* FilterUpdate (Intermediate_Result* mid, int newResults ,uint64_t *filter, int rel,int allRels);
 Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Result* List ,int rel1, int count, int allRels );
-void EndiamesiSum(Intermediate_Result* mid, char* select);
+void EndiamesiSum(Intermediate_Result* mid, relation *,char* select);
 
 #endif //PROJECT_JOIN_19_20_INTERMEDIATE_RESULT_H

@@ -282,10 +282,10 @@ void sorting(column_data * array0, column_data * array1 ,int start,int end,int w
 
 
 
-Result * Join(column_data R, column_data S )
+Result * Join(column_data R, column_data S,int * num_of_matches )
 {
     Result *ResultList = ListInit();
-    int i = 0 , j = 0 , matches = 0 ,num_of_matches =0 ;
+    int i = 0 , j = 0 , matches = 0  ;
 
     if(R.num_tuples < S.num_tuples)
     {
@@ -296,7 +296,7 @@ Result * Join(column_data R, column_data S )
 
                 matches++;
                 InsertResult(R.tuples[i].payload,S.tuples[j].payload,ResultList);
-                num_of_matches++;
+                (*num_of_matches)++;
 
                 j++;
             }
@@ -337,7 +337,8 @@ Result * Join(column_data R, column_data S )
 
                 matches ++;
                 InsertResult(S.tuples[i].payload,R.tuples[j].payload,ResultList);
-                num_of_matches++;
+                (*num_of_matches)++;
+
                 j++;
             }
             else if(S.tuples[i].key > R.tuples[j].key)
@@ -365,12 +366,11 @@ Result * Join(column_data R, column_data S )
             }
         }
     }
-    PrintResults(ResultList);
-    printf("Number of Joins: %d\n",num_of_matches);
+    //PrintResults(ResultList);
+    printf("Number of Joins: %d\n",*num_of_matches);
     free(R.tuples);
     free(S.tuples);
     return ResultList;
-    //freelist(ResultList);
 }
 
 relation * read_file(char * filename,int *rels)
@@ -567,8 +567,15 @@ void queries_analysis(char * FileToOpen,relation * relations)
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-        exec_predicates(relations,predicates,prio,total_ques,relations_to_check,mapping);
-
+        Intermediate_Result * IR=exec_predicates(relations,predicates,prio,total_ques,relations_to_check,mapping);
+//        EndiamesiSum(IR,relations,tokens[2]);
+        free(IR->relResults);
+        for(int i=0; i<relations_to_check; i++)
+        {
+            free(IR->resArray[i]);
+        }
+        free(IR->resArray);
+        free(IR);
 
 
 
@@ -588,7 +595,7 @@ void queries_analysis(char * FileToOpen,relation * relations)
 
 
 
-void exec_predicates(relation * relations,struct Predicates * predicates,int * prio,int total_ques,int relations_to_check,int * mapping)
+Intermediate_Result * exec_predicates(relation * relations,struct Predicates * predicates,int * prio,int total_ques,int relations_to_check,int * mapping)
 {
     Intermediate_Result* IR = create_Intermediate_Result(relations_to_check);
 
@@ -608,6 +615,9 @@ void exec_predicates(relation * relations,struct Predicates * predicates,int * p
 
             if((IR->relResults[predicates[prio[j]].relation1]) != -1) //an uparxei sthn endiamesh dinw auto
             {
+               // printf("%lu\n",IR->relResults[predicates[prio[j]].relation1]);
+
+                column1=load_from_IR(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1,IR->relResults[predicates[prio[j]].relation1],IR->resArray[predicates[prio[j]].relation1]);
             }
             else
             {
@@ -616,6 +626,8 @@ void exec_predicates(relation * relations,struct Predicates * predicates,int * p
 
             if((IR->relResults[predicates[prio[j]].relation2]) != -1) //an uparxei sthn endiamesh dinw auto
             {
+             //   printf("%lu\n",IR->relResults[predicates[prio[j]].relation2]);
+                column2=load_from_IR(relations,mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2,IR->relResults[predicates[prio[j]].relation2],IR->resArray[predicates[prio[j]].relation2]);
 
             }
             else
@@ -624,18 +636,25 @@ void exec_predicates(relation * relations,struct Predicates * predicates,int * p
             }
 
 
-            //            result *rhj=radish_hash_join(relation1,relation1.num_tuples,relation2,relation2.num_tuples);
-//            printf("Ta sunolika matches pou exoun ginei einai : %d \n",num_of_matches);
-//            //auto gia to rel1
-//            end_domh =JoinUpdate(end_domh ,num_of_matches ,rhj ,predicates[prio[j]].relation1,0,relations_to_check );
-//            // auto gia to rel2
-//            end_domh =JoinUpdate(end_domh ,num_of_matches ,rhj ,predicates[prio[j]].relation2,1,relations_to_check);
+            column_data sorted_column1=Sort(column1);
+            column_data sorted_column2=Sort(column2);
+            int list_result=0;
+            Result *List=Join(sorted_column1,sorted_column2,&list_result);
+            printf("%d\n",list_result);
+            if(list_result==0)
+            {
+                freelist(List);
+                continue;
+            }
+            //IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation1,0,relations_to_check);
+            //IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation2,1,relations_to_check);
+            freelist(List);
 
         }
         else // exw sugkrish me enan ari8mo
         {
             int matches=0;
-            int * filter;
+            uint64_t * filter=NULL;
             column_data column=load_column_data(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1);
 
 
@@ -663,7 +682,7 @@ void exec_predicates(relation * relations,struct Predicates * predicates,int * p
         }
 
     }
-    free(IR);
+    return IR;
 
 
 }
@@ -672,23 +691,40 @@ void exec_predicates(relation * relations,struct Predicates * predicates,int * p
 column_data load_column_data(relation * relations, int rel,int column_id)
 {
 
+    uint64_t i=0;
     column_data col;
     col.num_tuples=relations[rel].num_tuples;
     col.tuples=malloc(sizeof(tuple)*col.num_tuples);
-    for(int i=0; i< col.num_tuples; i++)
+    for( i=0; i< col.num_tuples; i++)
     {
         col.tuples[i].payload=i;
-        col.tuples[i].key=relations[rel].data[column_id*col.num_tuples+i];
+        col.tuples[i].key=relations[rel].data[(column_id*col.num_tuples)+i];
     }
     return col;
 }
 
+column_data load_from_IR(relation * relations,int rel,int column_id,uint64_t num_rows,uint64_t * row_ids)
+{
+    uint64_t i=0;
+    column_data col;
+    col.num_tuples=num_rows;
+    col.tuples=malloc(sizeof(tuple)*col.num_tuples);
+    printf("%d.%d",rel,column_id);
 
-int * Equalizer(column_data array,int given_num,int given_mode,int *count)
+    for( i=0; i< col.num_tuples; i++)
+    {
+        col.tuples[i].payload=row_ids[i];
+        col.tuples[i].key=relations[rel].data[(column_id*relations[rel].num_tuples)+col.tuples[i].payload];
+    }
+    return col;
+
+}
+
+uint64_t * Equalizer(column_data array,int given_num,int given_mode,int *count)
 {
     //pairnw ena array kai prepei na to diatreksw olo wste na brw tis times pou einai megaluteres 'h mikroteres 'h ises apo kapoion ari8mo
     //orizw mode1 gia to = , mode 2 gia to > kai mode 3 gia to <
-    int i;
+    uint64_t i=0;
     if(given_mode == 1)
     {
         for(i = 0 ; i < array.num_tuples; i++)
@@ -719,7 +755,7 @@ int * Equalizer(column_data array,int given_num,int given_mode,int *count)
             }
         }
     }
-    int * filter=malloc(sizeof(int)*(*count));
+    uint64_t * filter=malloc(sizeof(uint64_t)*(*count));
 
 
     if(given_mode == 1)
@@ -729,7 +765,7 @@ int * Equalizer(column_data array,int given_num,int given_mode,int *count)
         {
             if(array.tuples[i].key == given_num)
             {
-                filter[j]=array.tuples[i].key;
+                filter[j]=array.tuples[i].payload;
                 j++;
             }
         }
@@ -741,7 +777,7 @@ int * Equalizer(column_data array,int given_num,int given_mode,int *count)
         {
             if(array.tuples[i].key > given_num)
             {
-                filter[j]=array.tuples[i].key;
+                filter[j]=array.tuples[i].payload;
                 j++;
             }
         }
@@ -753,7 +789,7 @@ int * Equalizer(column_data array,int given_num,int given_mode,int *count)
         {
             if(array.tuples[i].key < given_num)
             {
-                filter[j]=array.tuples[i].key;
+                filter[j]=array.tuples[i].payload;
                 j++;
             }
         }
