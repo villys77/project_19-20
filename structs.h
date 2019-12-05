@@ -64,8 +64,8 @@ struct Predicates{
 
 typedef struct Intermediate_Result
 {
-    int* relResults; ///posa apotelesmata exei to tade relation
-    int** resArray;  ///ta apotelesmata
+    uint64_t * relResults; ///posa apotelesmata exei to tade relation
+    uint64_t ** resArray;  ///ta apotelesmata
 }Intermediate_Result;
 
 #endif //PROJECT_STRUCTS_H
