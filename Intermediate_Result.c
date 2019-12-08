@@ -1,4 +1,4 @@
-    //
+//
 // Created by villys77 on 2/12/19.
 //
 #include <stdio.h>
@@ -8,11 +8,12 @@
 
 Intermediate_Result* create_Intermediate_Result(int numRel)
 {
+    printf("from vreate %d\n",numRel);
     int  i;
 
     Intermediate_Result* mid = malloc(sizeof(Intermediate_Result));
     mid->relResults = malloc(numRel*sizeof(uint64_t));  //pinakas me to se poia relations exw vrei matches
-    mid->resArray = malloc(numRel*sizeof(uint64_t));  //pinakas me ta ids twn rels kai ta apotelesmata tous
+    mid->resArray = malloc(numRel*sizeof(uint64_t*));  //pinakas me ta ids twn rels kai ta apotelesmata tous
 
     for(i=0; i<numRel; i++)
     {
@@ -22,15 +23,14 @@ Intermediate_Result* create_Intermediate_Result(int numRel)
 
     return mid;
 }
-void PrintMe(Intermediate_Result* mid,int allRels,int total_matches)
+void PrintMe(Intermediate_Result* mid,int allRels)
 {
-    printf("%d %d\n",allRels,total_matches);
-    int i, j;
-    for (i=0; i<allRels; i++)
+    for (int i=0; i<allRels; i++)
     {
+        printf("\nrel %d\n",i);
         if(mid->relResults[i] != -1)
         {
-            for(j=0; j<total_matches; j++)
+            for(int  j=0; j<mid->relResults[i]; j++)
             {
                printf("%lu\n",mid->resArray[i][j]);
             }
@@ -67,13 +67,16 @@ Intermediate_Result* FilterUpdate (Intermediate_Result* mid, int newResults ,uin
 
         for(int i = 0; i < allRels; i++) // antigrafw ola ta stoixeia pou eixa hdh dimiourghsei.
         {
-            if (i!=rel && mid->relResults[i] != -1)
+            if (i==rel)
             {
-                //edw prepei na balw ta proigoumena stoixeia pou eixe mesa h endiamesh mou.
-                new_mid -> relResults[i] = mid -> relResults[i];
+                continue;
+
+            }
+            else if(mid->relResults[i] != -1)
+            {
+                new_mid->relResults[i] = mid->relResults[i];
                 new_mid->resArray[i] = malloc(new_mid->relResults[i]*sizeof(uint64_t));
-                //printf("%d \n" , new_mid -> relResults[i]);
-                for (int  j =0 ; j< new_mid->relResults[i]; j++)
+                for (int j =0 ; j<new_mid->relResults[i]; j++)
                 {
                     new_mid->resArray[i][j] = mid->resArray[i][j];
                 }
@@ -92,33 +95,21 @@ Intermediate_Result* FilterUpdate (Intermediate_Result* mid, int newResults ,uin
 
 Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Result* List ,int rel1, int count, int allRels )
 {
-    //kathe fora tha stelnw ena rel kai tha tsekarw thn diadikasia opws ginetai
-    //Opote thelw duo join updates
-    //anti gia rel2 tha tou dinw to 0,1 pou sumbolizei gia poia sxesh milaw
     int i , j ,c;
     ResultNode* tmp = List->first;
-    //printf("%lu",tmp->buffer[0][1]);
     c =0;
     ///////////gia to prwto relation einai auto
-    printf("aaaa %d\n",rel1);
     if(mid->relResults[rel1] == -1)
     {
+
         mid->relResults[rel1]= newResults;
         mid->resArray[rel1] = malloc(newResults*sizeof(uint64_t));
         while (tmp != NULL)
         {
             for(j = 0; j<tmp->counter; j++ )
             {
-                if( c == newResults)
-                {
-                    return mid;
-                }
                 mid->resArray[rel1][c] = tmp->buffer[j][count];
                 c++;
-            }
-            if(newResults >= SIZE_NODE)
-            {
-                newResults -= SIZE_NODE;
             }
             tmp = tmp->next;
         }
@@ -126,6 +117,7 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
     }
     else
     {
+        //printf("mphkaa edwww \n\n");
         int flag=0;
         Intermediate_Result *new_mid = create_Intermediate_Result(allRels);
         //twra exw ftiaksei mia arxika kenh endiamesh domh kai prepei na thn gemisw me ta katallhla
@@ -137,26 +129,20 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
         {
             for(j = 0; j<tmp->counter; j++)
             {
-                if(c == newResults)
-                {
-                    flag =1;
-                    break;
-                }
                 new_mid->resArray[rel1][c] = tmp->buffer[j][count];
                 c++;
-            }
-            if(flag == 1) break;
-            if(newResults >= SIZE_NODE)
-            {
-                newResults -= SIZE_NODE;
-            }
+             }
             tmp = tmp->next;
         }
         for(i = 0; i < allRels; i++) // antigrafw ola ta stoixeia pou eixa hdh dimiourghsei.
         {
-            if (i!=rel1 && mid->relResults[i] != -1)
+            if (i==rel1)
             {
-            //edw prepei na balw ta proigoumena stoixeia pou eixe mesa h endiamesh mou.
+                continue;
+            }
+            else if(mid->relResults[i]!=-1)
+            {
+
                 new_mid->relResults[i] = mid->relResults[i];
                 new_mid->resArray[i] = malloc((mid->relResults[i])*sizeof(uint64_t));
 
@@ -172,7 +158,7 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
 
 }
 
-void EndiamesiSum(Intermediate_Result* mid,relation* relations, char* select)
+void EndiamesiSum(Intermediate_Result* mid,relation* relations,int *mapping, char* select)
 {
     int i, j;
     char* re;
@@ -183,12 +169,15 @@ void EndiamesiSum(Intermediate_Result* mid,relation* relations, char* select)
     while(tok!=NULL)
     {
         sscanf(tok, "%d.%d", &rel, &col);
+
+        printf("%d %d %lu\n",mapping[rel],rel,relations[mapping[rel]].num_tuples*relations[mapping[rel]].num_columns);
         for(i=0; i<mid->relResults[rel]; i++)
         {
-//            sum+=mapping[rel].relations[col].tuples[mid->resArray[rel][i]].payload;
-       //malakia     sum+=relations[rel].data[relations->num_tuples*col+mid->resArray[rel][i]];
+            printf("aaa\n");
+            printf("%d %lu %lu\n",rel,mid->relResults[rel],mid->resArray[rel][i]);
+            sum+=relations[mapping[rel]].data[(relations[mapping[rel]].num_tuples*col)+mid->resArray[rel][i]];
         }
-        printf("%lu \n", sum);
+        printf("%lu  ", sum);
         tok = strtok_r(re, " ",&re);
         sum =0;
     }
