@@ -71,7 +71,34 @@ column_data Sort(column_data array0)
         array1.tuples[i].payload=0;
 
     }
-    sorting(&array0,&array1,0,array0.num_tuples,1,7);
+    uint64_t mask=pow(2, n) -1;;
+
+    int bt=7;
+    int flag=0;
+    while(bt>0)
+    {
+        for(int i=0;i<array0.num_tuples; i++)
+        {
+            uint64_t aa=array0.tuples[i].key;
+            uint64_t x =(aa >> (8*bt)) &  0xff;
+            if((x & mask)>0)
+            {
+                flag=1;
+                break;
+            }
+
+
+        }
+        if(flag==1)
+        {
+            break;
+        }
+        bt--;
+    }
+//    printf("bt=%d\n",bt);
+//    exit(0);
+
+    sorting(&array0,&array1,0,array0.num_tuples,1,bt);
 
     free(array0.tuples);
     return array1;
@@ -79,6 +106,8 @@ column_data Sort(column_data array0)
 
 void sorting(column_data * array0, column_data * array1 ,int start,int end,int where_to_write,int byte)
 {
+
+//    printf("mphka me start:%d  end:%d where:%d byte:%d\n",start,end,where_to_write,byte);
 
     uint64_t power = pow(2, n) -1;     /// 2^n (megethos pinakwn psum kai hist)
     uint64_t mask=power;
@@ -126,6 +155,18 @@ void sorting(column_data * array0, column_data * array1 ,int start,int end,int w
 
         }
     }
+//    int c=0;
+//    for(i=0; i<=power; i++)
+//    {
+//        c+=Hist[i].count;
+//    }
+//    printf("c=%d\n",c);
+//    if(Hist[0].count==end-start)
+//    {
+//        printf("mphkaaaa\n");
+//        sorting(array0,array1,start,end,where_to_write,byte-1);
+//
+//    }
 
 
     int ** index;
@@ -142,13 +183,13 @@ void sorting(column_data * array0, column_data * array1 ,int start,int end,int w
         }
     }
 
-    for(int row=0; row <256; row++)
-    {
-        for(int column=0; column<Hist[row].count; column++)
-        {
-
-        }
-    }
+//    for(int row=0; row <256; row++)
+//    {
+//        for(int column=0; column<Hist[row].count; column++)
+//        {
+//
+//        }
+//    }
 
         for(i=start; i<end; i++)
         {
@@ -269,8 +310,9 @@ void sorting(column_data * array0, column_data * array1 ,int start,int end,int w
         }
         else
         {
-            if(Psum[where_in_array].count==start && Psum[where_in_array+1].count==end && where_to_write==0)
+            if(Psum[where_in_array].count==start && Psum[where_in_array+1].count==end && where_to_write==0 && byte!=7)
             {
+//                printf("mphka edw\n");
                 return;
             }
             sorting(array0,array1,Psum[where_in_array].count,Psum[where_in_array+1].count,where_to_write,byte-1);
@@ -368,7 +410,7 @@ Result * Join(column_data R, column_data S,int * num_of_matches )
         }
     }
     //PrintResults(ResultList);
-   // printf("Number of Joins: %d\n",*num_of_matches);
+    //printf("Number of Joins: %d\n",*num_of_matches);
     free(R.tuples);
     free(S.tuples);
     return ResultList;
@@ -566,6 +608,24 @@ void queries_analysis(char * FileToOpen,relation * relations)
         free(pre);
 
 ////////////////////////////////////////////////////////////////////////////////////////////
+//
+//        for(int i=0;i<14; i++)
+//        {
+//            for(int j=0; j<relations[i].num_columns; j++)
+//            {
+//                printf("%d %d\n",i,j);
+//                column_data sort_col = load_column_data(relations, i, j);
+////                column_data sort_col = Sort(col);
+//
+//        quickSort(sort_col,0,sort_col.num_tuples-1);
+//                printf("\nkeno\n");
+//                for (int k = 0; k < sort_col.num_tuples; k++) {
+//                    printf(" %lu\n", sort_col.tuples[k].key);
+//
+//                }
+//            }
+//        }
+//        exit(0);
 
 
         Intermediate_Result * IR=exec_predicates(relations,predicates,prio,total_ques,relations_to_check,mapping);
@@ -618,16 +678,14 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
             if((IR->relResults[predicates[prio[j]].relation1]) != -1) //an uparxei sthn endiamesh dinw auto
             {
                 column1=load_from_IR(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1,IR->relResults[predicates[prio[j]].relation1],IR->resArray[predicates[prio[j]].relation1]);
-//                sorted_column1=Sort(column1);
-                quickSort(column1,0,column1.num_tuples-1);
+                sorted_column1=Sort(column1);
 
             }
 
             else
             {
                 column1=load_column_data(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1);
-//                sorted_column1=Sort(column1);
-                quickSort(column1,0,column1.num_tuples-1);
+                sorted_column1=Sort(column1);
 
             }
 
@@ -635,27 +693,24 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
             if((IR->relResults[predicates[prio[j]].relation2]) != -1) //an uparxei sthn endiamesh dinw auto
             {
                 column2=load_from_IR(relations,mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2,IR->relResults[predicates[prio[j]].relation2],IR->resArray[predicates[prio[j]].relation2]);
-                quickSort(column2,0,column2.num_tuples-1);
-
-//                sorted_column2=Sort(column2);
+                sorted_column2=Sort(column2);
             }
             else {
                 column2 = load_column_data(relations, mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2);
-                quickSort(column2, 0, column2.num_tuples - 1);
+                sorted_column2=Sort(column2);
+
             }
 
 
-//
-
             int list_result=0;
-            Result *List=Join(column1,column2,&list_result);
+            Result *List=Join(sorted_column1,sorted_column2,&list_result);
             if(list_result==0)
             {
                 freelist(List);
                 continue;
             }
 
-            if(column1.num_tuples< column2.num_tuples)
+            if(sorted_column1.num_tuples< sorted_column2.num_tuples)
             {
 
                 IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation1,0,relations_to_check);
@@ -698,8 +753,6 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
                 IR = FilterUpdate(IR , matches,filter ,predicates[prio[j]].relation1,relations_to_check);
 
             }
-            //PrintMe(IR,relations_to_check);
-           // exit(0);
             free(column.tuples);
             free(filter);
         }

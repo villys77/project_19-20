@@ -1,10 +1,8 @@
 #include <stdio.h>
-#include <malloc.h>
 #include <sys/mman.h>
 #include "structs.h"
 #include "functions.h"
-
-
+#include <stdlib.h>
 
 int main(int argc,char **argv)
 {
@@ -13,7 +11,6 @@ int main(int argc,char **argv)
         printf("Plase give 1 argument\n");
         return 0;
     }
-
 
     int rels;
     relation *relations=read_file(argv[1],&rels); ////pinakas apo relations
