@@ -8,7 +8,6 @@
 
 Intermediate_Result* create_Intermediate_Result(int numRel)
 {
-    printf("from vreate %d\n",numRel);
     int  i;
 
     Intermediate_Result* mid = malloc(sizeof(Intermediate_Result));
@@ -23,16 +22,17 @@ Intermediate_Result* create_Intermediate_Result(int numRel)
 
     return mid;
 }
-void PrintMe(Intermediate_Result* mid,int allRels)
+void PrintMe(Intermediate_Result* mid,int allRels,int total_matches)
 {
-    for (int i=0; i<allRels; i++)
+    int i, j;
+    for (i=0; i<allRels; i++)
     {
-        printf("\nrel %d\n",i);
+        printf("rel %d %lu \n",i,mid->relResults[i]);
         if(mid->relResults[i] != -1)
         {
-            for(int  j=0; j<mid->relResults[i]; j++)
+            for(j=0; j<mid->relResults[i]; j++)
             {
-               printf("%lu\n",mid->resArray[i][j]);
+                printf("%lu\n",mid->resArray[i][j]);
             }
         }
     }
@@ -49,7 +49,6 @@ Intermediate_Result* FilterUpdate (Intermediate_Result* mid, int newResults ,uin
         {
             mid->resArray[rel][i]=filter[i];
         }
-        //memcpy(mid->resArray[rel],filter,newResults);
         return mid;
     }
     else //auto shmainei oti h sxesh auth exei hdh grammena stoixeia mesa sti endiamesh domi opote prepei
@@ -129,6 +128,8 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
         {
             for(j = 0; j<tmp->counter; j++)
             {
+               // printf("%lu\n",tmp->buffer[j][count]);
+
                 new_mid->resArray[rel1][c] = tmp->buffer[j][count];
                 c++;
              }
@@ -170,11 +171,23 @@ void EndiamesiSum(Intermediate_Result* mid,relation* relations,int *mapping, cha
     {
         sscanf(tok, "%d.%d", &rel, &col);
 
-        printf("%d %d %lu\n",mapping[rel],rel,relations[mapping[rel]].num_tuples*relations[mapping[rel]].num_columns);
-        for(i=0; i<mid->relResults[rel]; i++)
+        if(mid->relResults[rel]==-1)
         {
-            printf("aaa\n");
-            printf("%d %lu %lu\n",rel,mid->relResults[rel],mid->resArray[rel][i]);
+            printf("NULL ");
+            tok = strtok_r(re, " ",&re);
+
+            if(tok==NULL)
+            {
+                printf("\n");
+
+                return;
+            }
+            continue;
+        }
+
+
+        for(int i=0; i<mid->relResults[rel]; i++)
+        {
             sum+=relations[mapping[rel]].data[(relations[mapping[rel]].num_tuples*col)+mid->resArray[rel][i]];
         }
         printf("%lu  ", sum);

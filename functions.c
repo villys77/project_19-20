@@ -368,7 +368,7 @@ Result * Join(column_data R, column_data S,int * num_of_matches )
         }
     }
     //PrintResults(ResultList);
-    printf("Number of Joins: %d\n",*num_of_matches);
+   // printf("Number of Joins: %d\n",*num_of_matches);
     free(R.tuples);
     free(S.tuples);
     return ResultList;
@@ -569,8 +569,7 @@ void queries_analysis(char * FileToOpen,relation * relations)
 
 
         Intermediate_Result * IR=exec_predicates(relations,predicates,prio,total_ques,relations_to_check,mapping);
-       // EndiamesiSum(IR,relations,mapping,tokens[2]);
-        //return;
+        EndiamesiSum(IR,relations,mapping,tokens[2]);
         free(IR->relResults);
         for(int i=0; i<relations_to_check; i++)
         {
@@ -604,6 +603,7 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
 
     for(int j= 0; j< total_ques; j++)
     {
+
         if(predicates[prio[j]].num == -1)//exw join.
         {
             column_data column1,sorted_column1;
@@ -617,44 +617,58 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
 
             if((IR->relResults[predicates[prio[j]].relation1]) != -1) //an uparxei sthn endiamesh dinw auto
             {
-                sorted_column1=load_from_IR(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1,IR->relResults[predicates[prio[j]].relation1],IR->resArray[predicates[prio[j]].relation1]);
+                column1=load_from_IR(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1,IR->relResults[predicates[prio[j]].relation1],IR->resArray[predicates[prio[j]].relation1]);
+//                sorted_column1=Sort(column1);
+                quickSort(column1,0,column1.num_tuples-1);
+
             }
+
             else
             {
                 column1=load_column_data(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1);
-                sorted_column1=Sort(column1);
+//                sorted_column1=Sort(column1);
+                quickSort(column1,0,column1.num_tuples-1);
+
             }
+
 
             if((IR->relResults[predicates[prio[j]].relation2]) != -1) //an uparxei sthn endiamesh dinw auto
             {
-                sorted_column2=load_from_IR(relations,mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2,IR->relResults[predicates[prio[j]].relation2],IR->resArray[predicates[prio[j]].relation2]);
+                column2=load_from_IR(relations,mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2,IR->relResults[predicates[prio[j]].relation2],IR->resArray[predicates[prio[j]].relation2]);
+                quickSort(column2,0,column2.num_tuples-1);
+
+//                sorted_column2=Sort(column2);
             }
-            else
-            {
-                column2=load_column_data(relations,mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2);
-                sorted_column2=Sort(column2);
+            else {
+                column2 = load_column_data(relations, mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2);
+                quickSort(column2, 0, column2.num_tuples - 1);
             }
 
+
+//
 
             int list_result=0;
-            Result *List=Join(sorted_column1,sorted_column2,&list_result);
+            Result *List=Join(column1,column2,&list_result);
             if(list_result==0)
             {
                 freelist(List);
                 continue;
             }
-            printf("rels %d\n",relations_to_check);
-            IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation1,0,relations_to_check);
-            printf("JOIN %d '\n\n\n",mapping[predicates[prio[j]].relation1]);
-            PrintMe(IR,relations_to_check);
-            printf(" '\n\n\n");
-            IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation2,1,relations_to_check);
-            printf("2o JOIN  %d '\n\n\n",mapping[predicates[prio[j]].relation2]);
 
-            PrintMe(IR,relations_to_check);
-            printf(" '\n\n\n");
+            if(column1.num_tuples< column2.num_tuples)
+            {
 
+                IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation1,0,relations_to_check);
+                IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation2,1,relations_to_check);
 
+            }
+            else
+            {
+
+                IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation2,0,relations_to_check);
+                IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation1,1,relations_to_check);
+
+            }
 
             freelist(List);
 
@@ -684,9 +698,8 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
                 IR = FilterUpdate(IR , matches,filter ,predicates[prio[j]].relation1,relations_to_check);
 
             }
-            printf("filter\n\n\n");
-            PrintMe(IR,relations_to_check);
-            printf("\n\n\n\n");
+            //PrintMe(IR,relations_to_check);
+           // exit(0);
             free(column.tuples);
             free(filter);
         }
