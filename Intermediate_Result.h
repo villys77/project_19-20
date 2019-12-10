@@ -8,7 +8,7 @@
 #include "structs.h"
 
 Intermediate_Result* create_Intermediate_Result(int numRel);
-void PrintMe(Intermediate_Result* mid,int allRels);
+void PrintMe(Intermediate_Result* mid);
 Intermediate_Result* FilterUpdate (Intermediate_Result* mid, int newResults ,uint64_t *filter, int rel,int allRels);
 Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Result* List ,int rel1, int count, int allRels );
 void EndiamesiSum(Intermediate_Result* mid, relation *,int*,char* select);

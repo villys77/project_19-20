@@ -22,7 +22,7 @@ Intermediate_Result* create_Intermediate_Result(int numRel)
 
     return mid;
 }
-void PrintMe(Intermediate_Result* mid,int allRels,int total_matches)
+void PrintMe(Intermediate_Result* mid,int allRels)
 {
     int i, j;
     for (i=0; i<allRels; i++)
@@ -116,8 +116,6 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
     }
     else
     {
-        //printf("mphkaa edwww \n\n");
-        int flag=0;
         Intermediate_Result *new_mid = create_Intermediate_Result(allRels);
         //twra exw ftiaksei mia arxika kenh endiamesh domh kai prepei na thn gemisw me ta katallhla
         //arxika bazw auta pou einai kainourgia
@@ -128,8 +126,6 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
         {
             for(j = 0; j<tmp->counter; j++)
             {
-               // printf("%lu\n",tmp->buffer[j][count]);
-
                 new_mid->resArray[rel1][c] = tmp->buffer[j][count];
                 c++;
              }
