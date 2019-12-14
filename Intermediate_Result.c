@@ -27,7 +27,6 @@ void PrintMe(Intermediate_Result* mid,int allRels)
     int i, j;
     for (i=0; i<allRels; i++)
     {
-        printf("rel %d %lu \n",i,mid->relResults[i]);
         if(mid->relResults[i] != -1)
         {
             for(j=0; j<mid->relResults[i]; j++)
@@ -155,9 +154,10 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
 
 }
 
-void EndiamesiSum(Intermediate_Result* mid,relation* relations,int *mapping, char* select)
+uint64_t * Intermediate_Sum(Intermediate_Result* mid,relation* relations,int *mapping, char* select,int shows)
 {
-    int i, j;
+    uint64_t * sums=malloc(sizeof(uint64_t)*shows);
+    int j=0;
     char* re;
     int rel, col;
     uint64_t sum = 0;
@@ -167,18 +167,13 @@ void EndiamesiSum(Intermediate_Result* mid,relation* relations,int *mapping, cha
     {
         sscanf(tok, "%d.%d", &rel, &col);
 
-        if(mid->relResults[rel]==-1)
+        if(mid->relResults[rel]==-1 ||mid->relResults[rel]==0)
         {
-            printf("NULL ");
-            tok = strtok_r(re, " ",&re);
-
-            if(tok==NULL)
+            for(int i=0; i<shows; i++ )
             {
-                printf("\n");
-
-                return;
+                sums[i]=0;
             }
-            continue;
+            return sums;
         }
 
 
@@ -186,10 +181,12 @@ void EndiamesiSum(Intermediate_Result* mid,relation* relations,int *mapping, cha
         {
             sum+=relations[mapping[rel]].data[(relations[mapping[rel]].num_tuples*col)+mid->resArray[rel][i]];
         }
-        printf("%lu  ", sum);
+        sums[j]=sum;
+        j++;
+//        printf("%lu  ", sum);
         tok = strtok_r(re, " ",&re);
         sum =0;
     }
-    printf("\n");
+//    printf("\n");
 }
 
