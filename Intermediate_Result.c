@@ -8,27 +8,51 @@
 
 Intermediate_Result* create_Intermediate_Result(int numRel)
 {
+
     int  i;
 
     Intermediate_Result* mid = malloc(sizeof(Intermediate_Result));
     mid->relResults = malloc(numRel*sizeof(uint64_t));  //pinakas me to se poia relations exw vrei matches
     mid->resArray = malloc(numRel*sizeof(uint64_t*));  //pinakas me ta ids twn rels kai ta apotelesmata tous
+    mid->Related_Rels=malloc(numRel* sizeof(uint64_t *));
 
     for(i=0; i<numRel; i++)
     {
         mid->relResults[i] = -1; //arxikopoiw me -1 ton pinaka me ta relations pou exoun apotelesmata
         mid->resArray[i]=NULL;
+        mid->Related_Rels[i]=malloc(numRel* sizeof(uint64_t));
+
+    }
+    int j;
+    for(i=0; i<numRel; i++)
+    {
+        for(j=0; j<numRel; j++)
+        {
+            mid->Related_Rels[i][j]=0;
+        }
     }
 
     return mid;
 }
 void PrintMe(Intermediate_Result* mid,int allRels)
 {
+//    for(int i=0; i<allRels; i++)
+//    {
+//        printf("%d : ",i);
+//        for(int j=0; j<allRels; j++)
+//        {
+//            printf("%lu ",mid->Related_Rels[i][j]);
+//        }
+//        printf("\n");
+//
+//    }
+//    return;
     int i, j;
     for (i=0; i<allRels; i++)
     {
         if(mid->relResults[i] != -1)
         {
+            printf("rel %d %lu\n",i,mid->relResults[i]);
             for(j=0; j<mid->relResults[i]; j++)
             {
                 printf("%lu\n",mid->resArray[i][j]);
@@ -91,7 +115,7 @@ Intermediate_Result* FilterUpdate (Intermediate_Result* mid, int newResults ,uin
     }
 }
 
-Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Result* List ,int rel1, int count, int allRels )
+Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Result* List ,int rel1, int count, int allRels ,int rel2)
 {
     int i , j ,c;
     ResultNode* tmp = List->first;
@@ -134,6 +158,10 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
         {
             if (i==rel1)
             {
+                for(j=0; j<allRels; j++)
+                {
+                    new_mid->Related_Rels[i][j]=mid->Related_Rels[i][j];
+                }
                 continue;
             }
             else if(mid->relResults[i]!=-1)
@@ -146,8 +174,57 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
                 {
                     new_mid->resArray[i][j] = mid->resArray[i][j];
                 }
+                for(j=0; j<allRels; j++)
+                {
+                    new_mid->Related_Rels[i][j]=mid->Related_Rels[i][j];
+                }
+
             }
         }
+
+        for(i=0; i<allRels; i++)
+        {
+            if(new_mid->Related_Rels[rel1][i] == 1 && (i!=rel2)) // exw kapoia sxesi pou epireazetai apo ta nea apotelesmata
+            {
+                int counter = 0,tmp;
+                new_mid->relResults[i]=new_mid->relResults[rel1];
+                new_mid->resArray[i]=malloc(newResults* sizeof(uint64_t));
+                for(j = 0; j < new_mid->relResults[rel1]; j++) //auta tou j einai ta kainourgia mou results
+                {
+                    for(int k=counter; k<mid->relResults[rel1]; k++)
+                    {
+                        if(new_mid->resArray[rel1][j] == mid->resArray[rel1][k])
+                        {
+                            new_mid->resArray[i][j] = mid->resArray[i][k];
+//                            if(k!=mid->relResults[rel1]-1 && j!=new_mid->relResults[rel1]-1)
+//                            {
+                                if((new_mid->resArray[rel1][j] == new_mid->resArray[rel1][j+1]) && (mid->resArray[rel1][k] == mid->resArray[rel1][k+1]))
+                                {
+                                    counter=k+1;
+                                    break;
+                                }
+                                else if((new_mid->resArray[rel1][j] == new_mid->resArray[rel1][j+1]) && (mid->resArray[rel1][k] != mid->resArray[rel1][k+1]))
+                                {
+                                    counter = 0;
+                                    break;
+                                }
+                                else if(new_mid->resArray[rel1][j] != new_mid->resArray[rel1][j+1])
+                                {
+//                                counter=0;
+                                    break;
+                                }
+
+//                            }
+                                                    }
+                    }
+                }
+
+            }
+        }
+
+
+
+
         free(mid->relResults);
         for(int i=0; i<allRels; i++)
         {

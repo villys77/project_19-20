@@ -389,7 +389,7 @@ Result * Join(column_data R, column_data S,int * num_of_matches )
         }
     }
     //PrintResults(ResultList);
-//    printf("Number of Joins: %d\n",*num_of_matches);
+   printf("Number of Joins: %d\n",*num_of_matches);
     free(R.tuples);
     free(S.tuples);
     return ResultList;
@@ -449,7 +449,6 @@ relation * read_file(char * filename,int *rels)
 
         i++;
     }
-    rewind(file);
 
 
     free(name);
@@ -496,8 +495,8 @@ uint64_t * loadRelation(char* fileName)
 
 void queries_analysis(char * FileToOpen,relation * relations)
 {
-    uint64_t *all_sums[50];
-    uint64_t shows[50];
+    uint64_t *all_sums[512];
+    uint64_t shows[512];
     int Sums_count=0;
     int i,j;
     FILE *file;
@@ -519,19 +518,37 @@ void queries_analysis(char * FileToOpen,relation * relations)
         // edw tsekarw an h grammh mou exei megethos megalutero apo ena
         if (strlen(line) < 3)
         {
-            printf("\nBATCH #%d\n\n",batch);
+//            printf("\nBATCH #%d\n\n",batch);
             batch++;
+
             for(int i=0; i<Sums_count; i++)
             {
                 for(int j=0; j<shows[i]; j++)
                 {
+
                     if(all_sums[i][j]==0)
                     {
-                        printf("NULL ");
+                        if(j==shows[i]-1)
+                        {
+                            printf("NULL");
+                        }
+                        else
+                        {
+                            printf("NULL ");
+                        }
+
                     }
                     else
                     {
-                        printf("%lu ",all_sums[i][j]);
+                        if(j==shows[i]-1)
+                        {
+                            printf("%lu",all_sums[i][j]);
+
+                        }
+                        else
+                        {
+                            printf("%lu ",all_sums[i][j]);
+                        }
                     }
                 }
                 printf("\n");
@@ -626,22 +643,17 @@ void queries_analysis(char * FileToOpen,relation * relations)
             }
         }
         show++; // ta sunolika rel
-//        if(Sums_count>0)
-//        {
-//            shows=realloc(shows, sizeof(uint64_t)*Sums_count+1);
-//        }
         shows[Sums_count]=show;
 
 
         Intermediate_Result * IR=exec_predicates(relations,predicates,prio,total_ques,relations_to_check,mapping);
         uint64_t * sums=Intermediate_Sum(IR,relations,mapping,tokens[2],show);
-
-//        if(Sums_count>0)
-//        {
-//            all_sums=realloc(all_sums, sizeof(uint64_t*)*Sums_count+1);
-//        }
-
-//        printf("%d\n",Sums_count);
+//                for(int i=0; i< show; i++)
+//                {
+//                    printf("%lu ",sums[i]);
+//                }
+//                printf("\n");
+//        return;
         all_sums[Sums_count]=sums;
         Sums_count++;
 
@@ -682,11 +694,13 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
 
         if(predicates[prio[j]].num == -1)//exw join.
         {
+            printf("%d.%d %d.%d\n",predicates[prio[j]].relation1,predicates[prio[j]].colum1,predicates[prio[j]].relation2,predicates[prio[j]].colum2);
             column_data column1,sorted_column1;
             column_data column2,sorted_column2;
 
             if(predicates[prio[j]].relation1==predicates[prio[j]].relation2)//self join
             {
+                printf("mphka\n");
                 column1=load_column_data(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1);
                 column2=load_column_data(relations,mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2);
                 int matches=0;
@@ -736,18 +750,19 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
             if(sorted_column1.num_tuples< sorted_column2.num_tuples)
             {
 
-                IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation1,0,relations_to_check);
-                IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation2,1,relations_to_check);
+                IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation1,0,relations_to_check,predicates[prio[j]].relation2);
+                IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation2,1,relations_to_check,predicates[prio[j]].relation1);
 
             }
             else
             {
 
-                IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation2,0,relations_to_check);
-                IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation1,1,relations_to_check);
+                IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation2,0,relations_to_check,predicates[prio[j]].relation1);
+                IR=JoinUpdate(IR,list_result,List,predicates[prio[j]].relation1,1,relations_to_check,predicates[prio[j]].relation2);
 
             }
-    //            PrintMe(IR,relations_to_check);
+            IR->Related_Rels[predicates[prio[j]].relation1][predicates[prio[j]].relation2] = 1;
+            IR->Related_Rels[predicates[prio[j]].relation2][predicates[prio[j]].relation1] = 1;
 
             freelist(List);
 
@@ -777,11 +792,17 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
                 IR = FilterUpdate(IR , matches,filter ,predicates[prio[j]].relation1,relations_to_check);
 
             }
+            if(matches==0)
+            {
+                break;
+            }
+//            PrintMe(IR,relations_to_check);
             free(column.tuples);
             free(filter);
         }
 
     }
+//    PrintMe(IR,relations_to_check);
     return IR;
 
 

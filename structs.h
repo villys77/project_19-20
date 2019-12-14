@@ -66,6 +66,7 @@ typedef struct Intermediate_Result
 {
     uint64_t * relResults; ///posa apotelesmata exei to tade relation
     uint64_t ** resArray;  ///ta apotelesmata
+    uint64_t ** Related_Rels;
 }Intermediate_Result;
 
 typedef struct Sum
