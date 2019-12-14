@@ -497,7 +497,7 @@ uint64_t * loadRelation(char* fileName)
 void queries_analysis(char * FileToOpen,relation * relations)
 {
     uint64_t *all_sums[50];
-    uint64_t shows[15];
+    uint64_t shows[50];
     int Sums_count=0;
     int i,j;
     FILE *file;
@@ -535,6 +535,10 @@ void queries_analysis(char * FileToOpen,relation * relations)
                     }
                 }
                 printf("\n");
+            }
+            for(int i=0; i<Sums_count; i++)
+            {
+                free(all_sums[i]);
             }
 
             Sums_count=0;

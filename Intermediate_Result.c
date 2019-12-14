@@ -148,6 +148,12 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
                 }
             }
         }
+        free(mid->relResults);
+        for(int i=0; i<allRels; i++)
+        {
+            free(mid->resArray[i]);
+        }
+        free(mid->resArray);
         free(mid);
         return new_mid;
     }
