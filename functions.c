@@ -680,9 +680,6 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
     Intermediate_Result* IR = create_Intermediate_Result(relations_to_check);
     for(int j= 0; j< total_ques; j++)
     {
-
-        printf("%d\n",prio[j]);
-//        printf("gamw re%d %d\n",predicates[prio[j]].relation1,predicates[prio[j]].relation2);
         if(predicates[prio[j]].num == -1)//exw join.
         {
             column_data column1,sorted_column1;
