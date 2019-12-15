@@ -60,9 +60,7 @@ void PrintResults(Result *head)
     {
         for(i=0;i<temp->counter ;i++)
         {
-            printf( "|%" PRIu64 "|%" PRIu64 "|\n", temp->buffer[i][0],temp->buffer[i][1]);
-
-//            fprintf(fp, "|%" PRIu64 "|%" PRIu64 "|\n", temp->buffer[i][0],temp->buffer[i][1]);
+            fprintf(fp, "|%" PRIu64 "|%" PRIu64 "|\n", temp->buffer[i][0],temp->buffer[i][1]);
             count++;
         }
         temp = temp->next;

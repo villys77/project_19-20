@@ -389,7 +389,7 @@ Result * Join(column_data R, column_data S,int * num_of_matches )
         }
     }
     //PrintResults(ResultList);
-    printf("Number of Joins: %d\n",*num_of_matches);
+    //printf("Number of Joins: %d\n",*num_of_matches);
     free(R.tuples);
     free(S.tuples);
     return ResultList;
@@ -791,7 +791,6 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
                 IR = FilterUpdate(IR , matches,filter ,predicates[prio[j]].relation1,relations_to_check);
 
             }
-            printf("mat %d\n",matches);
             if(matches==0)
             {
                 free(column.tuples);
