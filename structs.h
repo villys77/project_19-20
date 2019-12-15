@@ -69,9 +69,5 @@ typedef struct Intermediate_Result
     uint64_t ** Related_Rels;
 }Intermediate_Result;
 
-typedef struct Sum
-{
-    uint64_t * nums;
-    int size;
-}Sum;
+
 #endif //PROJECT_STRUCTS_H

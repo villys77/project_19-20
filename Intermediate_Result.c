@@ -188,15 +188,14 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
         {
             if(new_mid->Related_Rels[rel1][i] == 1 && (i!=rel2)) // exw kapoia sxesi pou epireazetai apo ta nea apotelesmata
             {
-                int counter = 0,tmp;
+                int counter = 0,tmp=0;
                 new_mid->relResults[i]=new_mid->relResults[rel1];
                 if(new_mid->resArray[i])
                 {
                     free(new_mid->resArray[i]);
                 }
-
                 new_mid->resArray[i]=malloc(newResults* sizeof(uint64_t));
-                int flag = 0;
+                int temp = 0,r;
                 for(j = 0; j < new_mid->relResults[rel1]; j++) //auta tou j einai ta kainourgia mou results
                 {
                     for(int k=counter; k<mid->relResults[rel1]; k++)
@@ -204,31 +203,42 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
                         if(new_mid->resArray[rel1][j] == mid->resArray[rel1][k])
                         {
                             new_mid->resArray[i][j] = mid->resArray[i][k];
-
+                            temp++;
                             if(j==new_mid->relResults[rel1]-1) break;
                             if(k==mid->relResults[rel1]-1)
                             {
-                                counter = 0;
+                                if (temp == 1) //auto einai otan to teleutaio mou k bgazei join alla to j den exei teleiwsei. opote prepei se ola ta alla j na balw auto mesa
+                                {
+                                    for(r = j+1 ; r <new_mid->relResults[rel1]; r++)
+                                    {
+                                        new_mid->resArray[i][r]=mid->resArray[i][k];
+                                    }
+                                }
+                                else counter = k - (temp);
                                 break;
                             }
 
 
                             if((new_mid->resArray[rel1][j] == new_mid->resArray[rel1][j+1]) && (mid->resArray[rel1][k] == mid->resArray[rel1][k+1]))
                             {
-                                counter=k+1;
+                                counter=k+1; // paw sto epomeno.
                                 break;
                             }
                             else if((new_mid->resArray[rel1][j] == new_mid->resArray[rel1][j+1]) && (mid->resArray[rel1][k] != mid->resArray[rel1][k+1]))
                             {
-                                counter = 0;
+//                                printf("temp = %d and total rels %lu\n",temp,mid->relResults[rel1]);
+                                counter = k-(temp-1); // gurnaw pisw toses theseis oses kai oi fores pou uparxei i idia timh mesa sto k
+                                temp=0; //midenizw to k pali giati thelw na ksanakanw to idio sthn periptwsh pou exw thn idia katastash.
                                 break;
                             }
-                            else if(new_mid->resArray[rel1][j] != new_mid->resArray[rel1][j+1])
+                            else if(new_mid->resArray[rel1][j] != new_mid->resArray[rel1][j+1]) // otan allazw to j mou prepei to temp na einai 0
                             {
+                                temp=0;
                                 break;
                             }
                         }
                     }
+
                 }
 
             }
@@ -276,6 +286,12 @@ uint64_t * Intermediate_Sum(Intermediate_Result* mid,relation* relations,int *ma
 
         for(int i=0; i<mid->relResults[rel]; i++)
         {
+            if(mid->resArray[rel][i] <0 ||mid->resArray[rel][i]>=relations[mapping[rel]].num_tuples)
+            {
+                printf(" %d %d %d %lu %lu %s\n",i,rel,mapping[rel],mid->resArray[rel][i],relations[mapping[rel]].num_tuples,select);
+                printf("skata\n");
+                exit(0);
+            }
             sum+=relations[mapping[rel]].data[(relations[mapping[rel]].num_tuples*col)+mid->resArray[rel][i]];
         }
         sums[j]=sum;
@@ -283,5 +299,6 @@ uint64_t * Intermediate_Sum(Intermediate_Result* mid,relation* relations,int *ma
         tok = strtok_r(re, " ",&re);
         sum =0;
     }
+    return sums;
 }
 
