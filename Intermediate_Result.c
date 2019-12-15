@@ -36,17 +36,7 @@ Intermediate_Result* create_Intermediate_Result(int numRel)
 }
 void PrintMe(Intermediate_Result* mid,int allRels)
 {
-//    for(int i=0; i<allRels; i++)
-//    {
-//        printf("%d : ",i);
-//        for(int j=0; j<allRels; j++)
-//        {
-//            printf("%lu ",mid->Related_Rels[i][j]);
-//        }
-//        printf("\n");
-//
-//    }
-//    return;
+
     int i, j;
     for (i=0; i<allRels; i++)
     {
@@ -286,12 +276,7 @@ uint64_t * Intermediate_Sum(Intermediate_Result* mid,relation* relations,int *ma
 
         for(int i=0; i<mid->relResults[rel]; i++)
         {
-            if(mid->resArray[rel][i] <0 ||mid->resArray[rel][i]>=relations[mapping[rel]].num_tuples)
-            {
-                printf(" %d %d %d %lu %lu %s\n",i,rel,mapping[rel],mid->resArray[rel][i],relations[mapping[rel]].num_tuples,select);
-                printf("skata\n");
-                exit(0);
-            }
+
             sum+=relations[mapping[rel]].data[(relations[mapping[rel]].num_tuples*col)+mid->resArray[rel][i]];
         }
         sums[j]=sum;
