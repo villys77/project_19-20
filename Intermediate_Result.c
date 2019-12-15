@@ -107,8 +107,10 @@ Intermediate_Result* FilterUpdate (Intermediate_Result* mid, int newResults ,uin
         free(mid->relResults);
         for(int i=0; i<allRels; i++)
         {
+            free(mid->Related_Rels[i]);
             free(mid->resArray[i]);
         }
+        free(mid->Related_Rels);
         free(mid->resArray);
         free(mid);
         return new_mid;
@@ -164,7 +166,7 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
                 }
                 continue;
             }
-            else if(mid->relResults[i]!=-1)
+            else if(mid->relResults[i]!=-1 )
             {
 
                 new_mid->relResults[i] = mid->relResults[i];
@@ -188,7 +190,13 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
             {
                 int counter = 0,tmp;
                 new_mid->relResults[i]=new_mid->relResults[rel1];
+                if(new_mid->resArray[i])
+                {
+                    free(new_mid->resArray[i]);
+                }
+
                 new_mid->resArray[i]=malloc(newResults* sizeof(uint64_t));
+                int flag = 0;
                 for(j = 0; j < new_mid->relResults[rel1]; j++) //auta tou j einai ta kainourgia mou results
                 {
                     for(int k=counter; k<mid->relResults[rel1]; k++)
@@ -196,26 +204,30 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
                         if(new_mid->resArray[rel1][j] == mid->resArray[rel1][k])
                         {
                             new_mid->resArray[i][j] = mid->resArray[i][k];
-//                            if(k!=mid->relResults[rel1]-1 && j!=new_mid->relResults[rel1]-1)
-//                            {
-                                if((new_mid->resArray[rel1][j] == new_mid->resArray[rel1][j+1]) && (mid->resArray[rel1][k] == mid->resArray[rel1][k+1]))
-                                {
-                                    counter=k+1;
-                                    break;
-                                }
-                                else if((new_mid->resArray[rel1][j] == new_mid->resArray[rel1][j+1]) && (mid->resArray[rel1][k] != mid->resArray[rel1][k+1]))
-                                {
-                                    counter = 0;
-                                    break;
-                                }
-                                else if(new_mid->resArray[rel1][j] != new_mid->resArray[rel1][j+1])
-                                {
-//                                counter=0;
-                                    break;
-                                }
 
-//                            }
-                                                    }
+                            if(j==new_mid->relResults[rel1]-1) break;
+                            if(k==mid->relResults[rel1]-1)
+                            {
+                                counter = 0;
+                                break;
+                            }
+
+
+                            if((new_mid->resArray[rel1][j] == new_mid->resArray[rel1][j+1]) && (mid->resArray[rel1][k] == mid->resArray[rel1][k+1]))
+                            {
+                                counter=k+1;
+                                break;
+                            }
+                            else if((new_mid->resArray[rel1][j] == new_mid->resArray[rel1][j+1]) && (mid->resArray[rel1][k] != mid->resArray[rel1][k+1]))
+                            {
+                                counter = 0;
+                                break;
+                            }
+                            else if(new_mid->resArray[rel1][j] != new_mid->resArray[rel1][j+1])
+                            {
+                                break;
+                            }
+                        }
                     }
                 }
 
@@ -228,8 +240,10 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
         free(mid->relResults);
         for(int i=0; i<allRels; i++)
         {
+            free(mid->Related_Rels[i]);
             free(mid->resArray[i]);
         }
+        free(mid->Related_Rels);
         free(mid->resArray);
         free(mid);
         return new_mid;
@@ -266,10 +280,8 @@ uint64_t * Intermediate_Sum(Intermediate_Result* mid,relation* relations,int *ma
         }
         sums[j]=sum;
         j++;
-//        printf("%lu  ", sum);
         tok = strtok_r(re, " ",&re);
         sum =0;
     }
-//    printf("\n");
 }
 

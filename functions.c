@@ -389,7 +389,7 @@ Result * Join(column_data R, column_data S,int * num_of_matches )
         }
     }
     //PrintResults(ResultList);
-   printf("Number of Joins: %d\n",*num_of_matches);
+    //printf("Number of Joins: %d\n",*num_of_matches);
     free(R.tuples);
     free(S.tuples);
     return ResultList;
@@ -518,9 +518,6 @@ void queries_analysis(char * FileToOpen,relation * relations)
         // edw tsekarw an h grammh mou exei megethos megalutero apo ena
         if (strlen(line) < 3)
         {
-//            printf("\nBATCH #%d\n\n",batch);
-            batch++;
-
             for(int i=0; i<Sums_count; i++)
             {
                 for(int j=0; j<shows[i]; j++)
@@ -648,21 +645,15 @@ void queries_analysis(char * FileToOpen,relation * relations)
 
         Intermediate_Result * IR=exec_predicates(relations,predicates,prio,total_ques,relations_to_check,mapping);
         uint64_t * sums=Intermediate_Sum(IR,relations,mapping,tokens[2],show);
-//                for(int i=0; i< show; i++)
-//                {
-//                    printf("%lu ",sums[i]);
-//                }
-//                printf("\n");
-//        return;
         all_sums[Sums_count]=sums;
         Sums_count++;
-
-//                return;
         free(IR->relResults);
         for(int i=0; i<relations_to_check; i++)
         {
+            free(IR->Related_Rels[i]);
             free(IR->resArray[i]);
         }
+        free(IR->Related_Rels);
         free(IR->resArray);
         free(IR);
 
@@ -694,26 +685,37 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
 
         if(predicates[prio[j]].num == -1)//exw join.
         {
-            printf("%d.%d %d.%d\n",predicates[prio[j]].relation1,predicates[prio[j]].colum1,predicates[prio[j]].relation2,predicates[prio[j]].colum2);
             column_data column1,sorted_column1;
             column_data column2,sorted_column2;
 
-            if(predicates[prio[j]].relation1==predicates[prio[j]].relation2)//self join
-            {
-                printf("mphka\n");
-                column1=load_column_data(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1);
-                column2=load_column_data(relations,mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2);
-                int matches=0;
-                uint64_t * rowids =self_join(column1,column2,&matches);
-                FilterUpdate(IR,matches,rowids,predicates[prio[j]].relation1,relations_to_check);
-                continue;
+           if(IR->Related_Rels[predicates[prio[j]].relation1][predicates[prio[j]].relation2 ]==1 )
+           {
 
-            }
+               column1=load_from_IR(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1,IR->relResults[predicates[prio[j]].relation1],IR->resArray[predicates[prio[j]].relation1]);
+               column2=load_from_IR(relations,mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2,IR->relResults[predicates[prio[j]].relation2],IR->resArray[predicates[prio[j]].relation2]);
+               int matches=0;
+               Result * List=scan(column1,column2,&matches);
+               if(column1.num_tuples< column2.num_tuples)
+               {
 
-            if((IR ->relResults[predicates[prio[j]].relation1] == 0) || (IR->relResults[predicates[prio[j]].relation2] == 0))
-            {
-                continue;
-            }
+                   IR=JoinUpdate(IR,matches,List,predicates[prio[j]].relation1,0,relations_to_check,predicates[prio[j]].relation2);
+                   IR=JoinUpdate(IR,matches,List,predicates[prio[j]].relation2,1,relations_to_check,predicates[prio[j]].relation1);
+
+               }
+               else
+               {
+
+                   IR=JoinUpdate(IR,matches,List,predicates[prio[j]].relation2,0,relations_to_check,predicates[prio[j]].relation1);
+                   IR=JoinUpdate(IR,matches,List,predicates[prio[j]].relation1,1,relations_to_check,predicates[prio[j]].relation2);
+
+               }
+               freelist(List);
+               free(column1.tuples);
+               free(column2.tuples);
+
+               continue;
+
+           }
 
             if((IR->relResults[predicates[prio[j]].relation1]) != -1) //an uparxei sthn endiamesh dinw auto
             {
@@ -794,15 +796,15 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
             }
             if(matches==0)
             {
+                free(column.tuples);
+                free(filter);
                 break;
             }
-//            PrintMe(IR,relations_to_check);
             free(column.tuples);
             free(filter);
         }
 
     }
-//    PrintMe(IR,relations_to_check);
     return IR;
 
 
@@ -840,27 +842,36 @@ column_data load_from_IR(relation * relations,int rel,int column_id,uint64_t num
 
 }
 
-uint64_t * self_join(column_data col1,column_data col2,int * matches)
+Result * scan(column_data col1,column_data col2,int * matches)
 {
-    for(int i=0; i<col1.num_tuples; i++)
-    {
-        if(col1.tuples[i].key==col2.tuples[i].key)
-        {
-            (*matches)++;
-        }
-    }
-    uint64_t * array=malloc(sizeof(uint64_t)*(*matches));
-    int j=0;
-    for(int i=0; i<col1.num_tuples; i++)
-    {
-        if(col1.tuples[i].key==col2.tuples[i].key)
-        {
-            array[j]=col1.tuples[i].payload;
-            j++;
-        }
-    }
-    return array;
+    Result * List=ListInit();
 
+    int i,j;
+    if(col1.num_tuples < col2.num_tuples)
+    {
+        for(i=0; i<col1.num_tuples; i++)
+        {
+
+            if (col1.tuples[i].key == col2.tuples[i].key)
+            {
+                InsertResult(col1.tuples[i].payload, col2.tuples[i].payload, List);
+                (*matches)++;
+            }
+        }
+    }
+    else
+    {
+        for(i=0; i<col2.num_tuples; i++)
+        {
+
+            if (col1.tuples[i].key == col2.tuples[i].key)
+            {
+                InsertResult(col2.tuples[i].payload, col1.tuples[i].payload, List);
+                (*matches)++;
+            }
+        }
+    }
+    return List;
 }
 
 uint64_t * Equalizer(column_data array,int given_num,int given_mode,int *count)
