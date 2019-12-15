@@ -178,14 +178,14 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
         {
             if(new_mid->Related_Rels[rel1][i] == 1 && (i!=rel2)) // exw kapoia sxesi pou epireazetai apo ta nea apotelesmata
             {
-                int counter = 0,tmp=0;
+                int counter = 0;
                 new_mid->relResults[i]=new_mid->relResults[rel1];
                 if(new_mid->resArray[i])
                 {
                     free(new_mid->resArray[i]);
                 }
                 new_mid->resArray[i]=malloc(newResults* sizeof(uint64_t));
-                int temp = 0,r;
+                int temp = 0,r=0;
                 for(j = 0; j < new_mid->relResults[rel1]; j++) //auta tou j einai ta kainourgia mou results
                 {
                     for(int k=counter; k<mid->relResults[rel1]; k++)
@@ -197,14 +197,14 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
                             if(j==new_mid->relResults[rel1]-1) break;
                             if(k==mid->relResults[rel1]-1)
                             {
-                                if (temp == 1) //auto einai otan to teleutaio mou k bgazei join alla to j den exei teleiwsei. opote prepei se ola ta alla j na balw auto mesa
+                                if (temp == 1 ) //auto einai otan to teleutaio mou k bgazei join alla to j den exei teleiwsei. opote prepei se ola ta alla j na balw auto mesa
                                 {
                                     for(r = j+1 ; r <new_mid->relResults[rel1]; r++)
                                     {
                                         new_mid->resArray[i][r]=mid->resArray[i][k];
                                     }
                                 }
-                                else counter = k - (temp);
+                                else counter = k - (temp-1);
                                 break;
                             }
 
@@ -216,7 +216,6 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
                             }
                             else if((new_mid->resArray[rel1][j] == new_mid->resArray[rel1][j+1]) && (mid->resArray[rel1][k] != mid->resArray[rel1][k+1]))
                             {
-//                                printf("temp = %d and total rels %lu\n",temp,mid->relResults[rel1]);
                                 counter = k-(temp-1); // gurnaw pisw toses theseis oses kai oi fores pou uparxei i idia timh mesa sto k
                                 temp=0; //midenizw to k pali giati thelw na ksanakanw to idio sthn periptwsh pou exw thn idia katastash.
                                 break;
@@ -228,9 +227,7 @@ Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Resul
                             }
                         }
                     }
-
                 }
-
             }
         }
 
