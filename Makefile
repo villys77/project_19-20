@@ -14,4 +14,4 @@ Intermediate_Result.o : Intermediate_Result.c
 	gcc -O3 -g3 -c Intermediate_Result.c
 
 clean:
-	rm main ; rm *.o; rm Results.csv
+	rm main ; rm *.o;
