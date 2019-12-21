@@ -28,6 +28,7 @@ void swap(uint64_t * a, uint64_t * b)
 
 int partition (column_data arr, int low, int high)
 {
+
     uint64_t pivot = arr.tuples[high].key;    // pivot
     int i = (low - 1);  // Index of smaller element
 
@@ -49,9 +50,25 @@ int partition (column_data arr, int low, int high)
 
 void quickSort(column_data arr, int low, int high)
 {
+    int flag=0;
+    for(int i=low+1 ; i<=high; i++)
+    {
+        if(arr.tuples[i-1].key > arr.tuples[i].key)
+        {
+            flag=1;
+            break;
+        }
+
+    }
+    if(flag==0)
+    {
+        return ;
+    }
+
     if(low < high)
     {
         int pi = partition(arr , low , high);
+
         quickSort(arr, low, pi - 1);
         quickSort(arr, pi + 1 , high);
     }
@@ -69,10 +86,27 @@ column_data Sort(column_data array0)
         array1.tuples[i].payload=0;
 
     }
+//    uint64_t temp=array0.tuples[0].key;
+    int flag=0;
+    for(int i=1 ; i<array0.num_tuples; i++)
+    {
+        if(array0.tuples[i-1].key > array0.tuples[i].key)
+        {
+            flag=1;
+            break;
+        }
+
+    }
+    if(flag==0)
+    {
+        memcpy(array1.tuples,array0.tuples,array1.num_tuples* sizeof(uint64_t)*2);
+        free(array0.tuples);
+        return array1;
+    }
     uint64_t mask=pow(2, n) -1;;
 
     int bt=7;
-    int flag=0;
+    flag=0;
     while(bt>0)
     {
         for(int i=0;i<array0.num_tuples; i++)
@@ -94,6 +128,7 @@ column_data Sort(column_data array0)
         bt--;
     }
 
+//    printf("bt = %d\n",bt);
     sorting(&array0,&array1,0,array0.num_tuples,1,bt);
 
     free(array0.tuples);
@@ -102,7 +137,7 @@ column_data Sort(column_data array0)
 
 void sorting(column_data * array0, column_data * array1 ,int start,int end,int where_to_write,int byte)
 {
-
+//    printf("start:%d end:%d where:%d byte:%d\n",start,end,where_to_write,byte);
 
     uint64_t power = pow(2, n) -1;     /// 2^n (megethos pinakwn psum kai hist)
     uint64_t mask=power;
@@ -113,6 +148,7 @@ void sorting(column_data * array0, column_data * array1 ,int start,int end,int w
 
     if(byte==0 && start==0 && end==array0->num_tuples )
     {
+
 
         quickSort(*array0,start,end-1);
         memcpy(array1->tuples,array0->tuples,array0->num_tuples* sizeof(uint64_t)*2);
@@ -163,14 +199,38 @@ void sorting(column_data * array0, column_data * array1 ,int start,int end,int w
 
         }
     }
+    int sort_flag=0;
+    for(int counter=0; counter<=power; counter++)
+    {
+        if(Hist[counter].count>100000)
+        {
+            sort_flag=1;
+        }
+    }
+    if(sort_flag==1)
+    {
+//        printf("mphka gamww\n");
 
+        if(where_to_write==1)
+        {
+            quickSort(*array0,start,end-1);
+            memcpy(array1->tuples+start,array0->tuples,end*sizeof(tuple));
+        }
+        else
+        {
+            quickSort(*array1,start,end-1);
+        }
+        return;
+    }
+
+    int index_size=256;
     int ** index;
-    index=malloc(sizeof(int*)*256);
-    for(int counter=0; counter<256; counter++)
+    index=malloc(sizeof(int*)*index_size);
+    for(int counter=0; counter<index_size; counter++)
     {
         index[counter]=malloc(sizeof(int)*Hist[counter].count);
     }
-    for(int row=0; row<256; row++)
+    for(int row=0; row<index_size; row++)
     {
         for(int column=0; column<Hist[row].count; column++)
         {
@@ -181,15 +241,20 @@ void sorting(column_data * array0, column_data * array1 ,int start,int end,int w
 
     for(i=start; i<end; i++)
     {
+
+
         if(where_to_write==1)
         {
             uint64_t aa=array0->tuples[i].key;
             uint64_t x =(aa >> (8*byte)) &  0xff;
             uint64_t bt=x & mask;
+
             for(int column=0; column<Hist[bt].count; column++)
             {
                 if(index[bt][column]==-1)
                 {
+//                    printf("gamw\n");
+
                     index[bt][column]=(int)i;
                     break;
                 }
@@ -200,18 +265,20 @@ void sorting(column_data * array0, column_data * array1 ,int start,int end,int w
             uint64_t aa=array1->tuples[i].key;
             uint64_t x =(aa >> (8*byte)) &  0xff;
             uint64_t bt=x & mask;
+
             for(int column=0; column<Hist[bt].count; column++)
             {
                 if(index[bt][column]==-1)
                 {
+                    // printf("gamw\n");
                     index[bt][column]=(int)i;
                     break;
                 }
             }
-
         }
     }
-
+//    printf("bghka");
+//    exit(0);
     ////////////////////////////////////////////////////////////////////
     //////////////PSUM
     hist Psum[power +1 ];
@@ -236,6 +303,7 @@ void sorting(column_data * array0, column_data * array1 ,int start,int end,int w
     while (where_in_array <=power)
     {
         int column=0;
+
         for (i = Psum[where_in_array].count; i < Psum[where_in_array+1].count; i++)
         {
             if(where_to_write==1)
@@ -257,7 +325,7 @@ void sorting(column_data * array0, column_data * array1 ,int start,int end,int w
     }
 
 
-    for(int counter=0; counter<256; counter++)
+    for(int counter=0; counter<index_size; counter++)
     {
         free(index[counter]);
     }
@@ -296,6 +364,7 @@ void sorting(column_data * array0, column_data * array1 ,int start,int end,int w
             }
             sorting(array0,array1,Psum[where_in_array].count,Psum[where_in_array+1].count,where_to_write,byte-1);
         }
+
 
 
         where_in_array++;
@@ -388,8 +457,8 @@ Result * Join(column_data R, column_data S,int * num_of_matches )
             }
         }
     }
-    //PrintResults(ResultList);
-    //printf("Number of Joins: %d\n",*num_of_matches);
+//    PrintResults(ResultList);
+//    printf("Number of Joins: %d\n",*num_of_matches);
     free(R.tuples);
     free(S.tuples);
     return ResultList;
@@ -443,14 +512,13 @@ relation * read_file(char * filename,int *rels)
             relations[i].num_tuples=relations[i].data[0];
             relations[i].num_columns=relations[i].data[1];
             relations[i].data+=2;
+//            printf("rel %d %lu %lu\n",i,relations[i].num_tuples,relations[i].num_columns);
             free(path);
 
         }
 
         i++;
     }
-
-
     free(name);
 
     fclose(file);
@@ -495,6 +563,7 @@ uint64_t * loadRelation(char* fileName)
 
 void queries_analysis(char * FileToOpen,relation * relations)
 {
+
     uint64_t *all_sums[512];
     uint64_t shows[512];
     int Sums_count=0;
@@ -642,6 +711,21 @@ void queries_analysis(char * FileToOpen,relation * relations)
         show++; // ta sunolika rel
         shows[Sums_count]=show;
 
+//        for(int i=0; i<9; i++)
+//        {
+//            for(int j=0; j<relations[i].num_columns; j++)
+//            {printf("sortara\n");
+//                column_data col=load_column_data(relations,i,j);
+//                column_data sort_col=Sort(col);
+//            }
+//        }
+
+//        for(int i=0; i<col.num_tuples-1; i++)
+//        {
+//            printf("%lu %lu\n",col.tuples[i].payload,col.tuples[i].key);
+//        }
+//exit(0);
+//quickSort(sort_col,0,sort_col.num_tuples-1);
 
         Intermediate_Result * IR=exec_predicates(relations,predicates,prio,total_ques,relations_to_check,mapping);
         uint64_t * sums=Intermediate_Sum(IR,relations,mapping,tokens[2],show);
@@ -713,28 +797,46 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
                continue;
 
            }
-
+//printf("gamww\n");
             if((IR->relResults[predicates[prio[j]].relation1]) != -1) //an uparxei sthn endiamesh dinw auto
             {
+
                 column1=load_from_IR(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1,IR->relResults[predicates[prio[j]].relation1],IR->resArray[predicates[prio[j]].relation1]);
                 sorted_column1=Sort(column1);
+
+//                sorted_column1=load_from_IR(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1,IR->relResults[predicates[prio[j]].relation1],IR->resArray[predicates[prio[j]].relation1]);
+//                quickSort(sorted_column1,0,sorted_column1.num_tuples-1);
             }
             else
             {
-              column1=load_column_data(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1);
+                column1=load_column_data(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1);
                 sorted_column1=Sort(column1);
+
+//                sorted_column1=load_column_data(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1);
+//                quickSort(sorted_column1,0,sorted_column1.num_tuples-1);
+
             }
+
 
 
             if((IR->relResults[predicates[prio[j]].relation2]) != -1) //an uparxei sthn endiamesh dinw auto
             {
                 column2=load_from_IR(relations,mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2,IR->relResults[predicates[prio[j]].relation2],IR->resArray[predicates[prio[j]].relation2]);
                 sorted_column2=Sort(column2);
+
+
+//                sorted_column2=load_from_IR(relations,mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2,IR->relResults[predicates[prio[j]].relation2],IR->resArray[predicates[prio[j]].relation2]);
+//                quickSort(sorted_column2,0,sorted_column2.num_tuples-1);
+
             }
             else
             {
                 column2 = load_column_data(relations, mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2);
                 sorted_column2=Sort(column2);
+
+//                sorted_column2 = load_column_data(relations, mapping[predicates[prio[j]].relation2],predicates[prio[j]].colum2);
+//                quickSort(sorted_column2,0,sorted_column2.num_tuples-1);
+//
             }
 
 
@@ -771,7 +873,6 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
             int matches=0;
             uint64_t * filter=NULL;
             column_data column=load_column_data(relations,mapping[predicates[prio[j]].relation1],predicates[prio[j]].colum1);
-
 
             if(predicates[prio[j]].op == '<')
             {
@@ -820,6 +921,7 @@ column_data load_column_data(relation * relations, int rel,int column_id)
         col.tuples[i].payload=i;
         col.tuples[i].key=relations[rel].data[(column_id*col.num_tuples)+i];
     }
+
     return col;
 }
 
