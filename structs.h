@@ -24,11 +24,22 @@ typedef struct hist
     unsigned count;
 }hist;
 
+typedef struct statistics
+{
+    uint64_t * min;
+    uint64_t * max;
+    uint64_t * number;
+    uint64_t * distinct;
+    int ** dis_vals;
+}stats;
+
 typedef struct relation
 {
     uint64_t num_tuples;
     uint64_t num_columns;
     uint64_t * data;
+    struct statistics stats;
+
 }relation;
 
 typedef struct column_data
