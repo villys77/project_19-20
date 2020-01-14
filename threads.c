@@ -1,8 +1,145 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "threads.h"
-#include <pthread.h>
+#include "functions.h"
+#include "Intermediate_Result.h"
+#include <string.h>
 
+
+void * thread_function(void * args)
+{
+
+    struct args *my_args = (struct args *) args;
+
+    char *token;
+    char **tokens;
+
+    tokens = malloc(3 * sizeof(char *));
+    char* ts=NULL;
+    token = strtok_r(my_args->line, "|",&ts);
+    tokens[0]=strdup(token);
+
+    token = strtok_r(NULL, "|",&ts);
+    tokens[1] =strdup(token);
+
+    token = strtok_r(NULL, "\n",&ts);
+    tokens[2]  =strdup(token);
+
+//        printf("%s|%s|%s\n",tokens[0],tokens[1],tokens[2]);
+
+
+////////////////////////////////////////////////////////////////////////////////////
+///////// antoistoixish twn 0,1,2.... pou anaferontai sta predicates stis pragamtikes sxeseis me to mapping
+
+    int relations_to_check=0;
+    int i;
+    for(i=0; i<strlen(tokens[0]); i++)
+    {
+        //metraw ta kena pou exw wste na brw kai to poses sxeseis exw
+        if(my_args->line[i] ==' ')
+        {
+            relations_to_check ++;
+        }
+    }
+    relations_to_check++; // ta sunolika relation pou exoume na koitaksoume
+
+    int * mapping=malloc(sizeof(int)*relations_to_check);
+    char * re=NULL;
+    char * sxeseis=strdup(tokens[0]);
+    char * temp=strtok_r(sxeseis," ",&re);
+    int id=strtol(temp,NULL,10);
+    mapping[0]=id;
+    for(i=1; i<relations_to_check; i++)
+    {
+
+        temp=strtok_r(re," ",&re);
+        id=strtol(temp,NULL,10);
+        mapping[i]=id;
+
+    }
+    free(sxeseis);
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//////proteraiothta twn predicates ..poio 8a ginei 1o,2o klp ston pianaka prio
+    int total_ques=0;
+    for(i=0; i<strlen(tokens[1]); i++)
+    {
+        if(my_args->line[i+strlen(tokens[0])] =='&')
+        {
+            total_ques ++;
+        }
+    }
+    total_ques++;
+
+    ///debugging printf("Exw sunolika %d sxeseis kai %d queries\n\n",relations_to_check,total_ques);
+
+    char* pre =strdup(tokens[1]);
+    pthread_mutex_lock(&my_args->mutex);
+    struct Predicates* predicates=predicates_analysis(total_ques,pre,my_args->relations,mapping);
+//        continue;
+    pthread_mutex_unlock(&my_args->mutex);
+    int *prio=predicates_priority(total_ques,predicates);
+
+//    reset_statistics(relations,original,tokens[0]);
+//        exit(0);
+    free(pre);
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    int show=0;
+    for(i=0; i<strlen(tokens[2]); i++)
+    {
+        //metraw ta kena pou exw wste na brw kai to poses sxeseis exw
+        if(tokens[2][i]==' ')
+        {
+            show++;
+        }
+    }
+    show++; // ta sunolika rel
+
+    pthread_mutex_lock(&my_args->mutex);/////lock
+    my_args->shows[my_args->Sums_count]=show;
+    pthread_mutex_unlock(&my_args->mutex);////unlock
+
+
+    Intermediate_Result * IR=exec_predicates(my_args->relations,predicates,prio,total_ques,relations_to_check,mapping);
+    uint64_t * sums=Intermediate_Sum(IR,my_args->relations,mapping,tokens[2],show);
+
+    pthread_mutex_lock(&my_args->mutex);///lock
+    my_args->all_sums[my_args->Sums_count]=sums;
+//    my_args->Sums_count++;
+    pthread_mutex_unlock(&my_args->mutex);////unlock
+
+
+
+    free(IR->relResults);
+    for(int i=0; i<relations_to_check; i++)
+    {
+
+        free(IR->Related_Rels[i]);
+        free(IR->resArray[i]);
+    }
+    free(IR->Related_Rels);
+    free(IR->resArray);
+    free(IR);
+
+
+
+    free(tokens[0]);
+    free(tokens[1]);
+    free(tokens[2]);
+    free(tokens);
+    free(prio);
+    free(predicates);
+    free(mapping);
+
+}
 
 
 threadpool *THP_Init(int n_threads)

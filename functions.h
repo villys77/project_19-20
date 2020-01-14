@@ -6,14 +6,14 @@
 #define PROJECT_FUNCTIONS_H
 
 #include "structs.h"
-
+#include "threads.h"
 
 column_data Sort(column_data);
 void sorting (column_data *,column_data *,int, int , int , int);
 Result * Join(column_data , column_data,int * );
 relation * read_file(char*,int *,struct statistics**);
 uint64_t * loadRelation(char* );
-void queries_analysis(char * ,relation*,int,struct statistics*);
+void queries_analysis(char * ,relation*,int,struct statistics*,threadpool*);
 struct Predicates* predicates_analysis(int,char *,relation*,int *);
 int * predicates_priority(int,struct Predicates *);
 column_data load_column_data(relation *, int rel,int col);

@@ -2,6 +2,7 @@
 #include <sys/mman.h>
 #include "structs.h"
 #include "functions.h"
+#include "threads.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -79,19 +80,11 @@ int main(int argc,char **argv)
     int rels=0;
     struct statistics *original =NULL;
     relation *relations=read_file(argv[1],&rels, &original); ////pinakas apo relations
-    for(int i=0; i<rels; i++)
-    {
-        for(int j=0; j<relations[i].num_columns; j++)
-        {
-//            printf("%lu %lu %lu %lu\n",relations[i].stats.min[j],relations[i].stats.max[j],relations[i].stats.number[j],relations[i].stats.distinct[j]);
 
-//            printf("%lu %lu %lu %lu\n",original[i].min[j],original[i].max[j],original[i].number[j],original[i].distinct[j]);
+    threadpool * pool_threads=THP_Init(N_THREADS);
+    queries_analysis(argv[2],relations,rels,original,pool_threads);
 
-        }
-    }
-//    return 0;
-    queries_analysis(argv[2],relations,rels,original);
-
+    THP_Destroy(pool_threads);
     free(relations);
 
     return  0;

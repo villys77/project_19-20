@@ -2,7 +2,25 @@
 #define _THPOOL_H_
 
 #include <pthread.h>
-#define N_THREADS 3
+#include "structs.h"
+
+#define N_THREADS 8
+
+
+
+typedef struct args
+{
+    char * line;
+    int rels;
+    relation * relations;
+    int Sums_count;
+    uint64_t **all_sums;
+    uint64_t *shows;
+    pthread_mutex_t mutex;
+}args;
+
+void * thread_function(void *);
+
 
 
 typedef struct job{

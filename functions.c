@@ -15,6 +15,9 @@
 #include "structs.h"
 #include "Result.h"
 #include "Intermediate_Result.h"
+#include "threads.h"
+//#include <pthread.h>
+
 
 #define n 8
 
@@ -601,7 +604,7 @@ relation * read_file(char * filename,int *rels ,struct statistics ** original)
                 counter=0;
                 for(z=0; z<dist_size; z++)
                 {
-                    if(dists[j][z]==true)
+//                    if(dists[j][z]==true)
                     {
                         if(z+relations[i].stats.min[j]<dist_size)
                         {
@@ -674,7 +677,7 @@ uint64_t * loadRelation(char* fileName)
 }
 
 
-void queries_analysis(char * FileToOpen,relation * relations,int rels,struct statistics * original)
+void queries_analysis(char * FileToOpen,relation * relations,int rels,struct statistics * original,threadpool* pool_threads)
 {
 
     uint64_t *all_sums[512];
@@ -700,8 +703,14 @@ void queries_analysis(char * FileToOpen,relation * relations,int rels,struct sta
         // edw tsekarw an h grammh mou exei megethos megalutero apo ena
         if (strlen(line) < 3)
         {
+            THP_Barrier(pool_threads);
+
+//            Sums_count--;
+//           printf("mphkxa me %d\n",Sums_count);
+
             for(int i=0; i<Sums_count; i++)
             {
+//                printf("shows %lu\n",shows[i]);
                 for(int j=0; j<shows[i]; j++)
                 {
 
@@ -734,149 +743,174 @@ void queries_analysis(char * FileToOpen,relation * relations,int rels,struct sta
             }
             for(int i=0; i<Sums_count; i++)
             {
-                free(all_sums[i]);
+                if(all_sums[i])
+                {
+
+                    free(all_sums[i]);
+                }
             }
 
             Sums_count=0;
 
+//            printf("change batch\n\n");
             continue;
         }
 
-        tokens = malloc(3 * sizeof(char *));
-        token = strtok(line, "|");
-        tokens[0]=strdup(token);
+        args *my_args=malloc(sizeof(args));
+        my_args->line=strdup(line);
+        my_args->rels=rels;
+        my_args->relations=relations;
 
-        token = strtok(NULL, "|");
-        tokens[1] =strdup(token);
-
-        token = strtok(NULL, "\n");
-        tokens[2] =strdup(token);
-
-//        printf("%s|%s|%s\n",tokens[0],tokens[1],tokens[2]);
+        my_args->Sums_count=Sums_count;
+        my_args->shows=shows;
+        my_args->all_sums=all_sums;
+        pthread_mutex_init(&my_args->mutex,NULL);
 
 
-////////////////////////////////////////////////////////////////////////////////////
-///////// antoistoixish twn 0,1,2.... pou anaferontai sta predicates stis pragamtikes sxeseis me to mapping
+        THP_AddJob(pool_threads,(void *)thread_function,my_args);
 
-        int relations_to_check=0;
-        for(i=0; i<strlen(tokens[0]); i++)
-        {
-            //metraw ta kena pou exw wste na brw kai to poses sxeseis exw
-            if(line[i] ==' ')
-            {
-                relations_to_check ++;
-            }
-        }
-        relations_to_check++; // ta sunolika relation pou exoume na koitaksoume
-
-        int * mapping=malloc(sizeof(int)*relations_to_check);
-        char * re=NULL;
-        char * sxeseis=strdup(tokens[0]);
-        char * temp=strtok_r(sxeseis," ",&re);
-        int id=strtol(temp,NULL,10);
-        mapping[0]=id;
-        for(i=1; i<relations_to_check; i++)
-        {
-
-            temp=strtok_r(re," ",&re);
-            id=strtol(temp,NULL,10);
-            mapping[i]=id;
-
-        }
-        free(sxeseis);
-
-
-///////////////////////////////////////////////////////////////////////////////////////////
-
-
-///////////////////////////////////////////////////////////////////////////////////////////
-//////proteraiothta twn predicates ..poio 8a ginei 1o,2o klp ston pianaka prio
-        int total_ques=0;
-        for(i=0; i<strlen(tokens[1]); i++)
-        {
-            if(line[i+strlen(tokens[0])] =='&')
-            {
-                total_ques ++;
-            }
-        }
-        total_ques++;
-
-        ///debugging printf("Exw sunolika %d sxeseis kai %d queries\n\n",relations_to_check,total_ques);
-
-        char* pre =strdup(tokens[1]);
-        struct Predicates* predicates=predicates_analysis(total_ques,pre,relations,mapping);
-//        continue;
-        int *prio=predicates_priority(total_ques,predicates);
-
-        reset_statistics(relations,original,tokens[0]);
-//        exit(0);
-        free(pre);
-
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-
-        int show=0;
-        for(i=0; i<strlen(tokens[2]); i++)
-        {
-            //metraw ta kena pou exw wste na brw kai to poses sxeseis exw
-            if(tokens[2][i]==' ')
-            {
-                show++;
-            }
-        }
-        show++; // ta sunolika rel
-        shows[Sums_count]=show;
-
-
-
-//for(int i=0; i<rels   ; i++)
-//{
-//    for(int j=0; j<relations[i].num_columns; j++)
-//    {
-//        printf("%lu %lu %lu %lu \n",relations[i].stats.min[j],relations[i].stats.max[j],relations[i].stats.number[j],relations[i].stats.distinct[j]);
-//    }
-//}
-
-//exit(0);
-        Intermediate_Result * IR=exec_predicates(relations,predicates,prio,total_ques,relations_to_check,mapping);
-        uint64_t * sums=Intermediate_Sum(IR,relations,mapping,tokens[2],show);
-        all_sums[Sums_count]=sums;
         Sums_count++;
-        free(IR->relResults);
-        for(int i=0; i<relations_to_check; i++)
-        {
+//        pthread_t pid;
+//        pthread_create(&pid,NULL,thread_function,(void*)my_args);
 
-            free(IR->Related_Rels[i]);
-            free(IR->resArray[i]);
-        }
-        free(IR->Related_Rels);
-        free(IR->resArray);
-        free(IR);
+//        pthread_join(pid,NULL);
 
 
-
-        free(tokens[0]);
-        free(tokens[1]);
-        free(tokens[2]);
-        free(tokens);
-        free(prio);
-        free(predicates);
-        free(mapping);
-
-    }
-    for(int i=0; i<rels; i++)
-    {
-        free(relations[i].stats.max);
-        free(relations[i].stats.min);
-        free(relations[i].stats.distinct);
-        free(relations[i].stats.number);
-        for(int j=0; j<relations[i].num_columns; j++)
-        {
-            free(relations[i].stats.dis_vals[j]);
-        }
-        free(relations[i].stats.dis_vals);
-
+//        tokens = malloc(3 * sizeof(char *));
+//        token = strtok(line, "|");
+//        tokens[0]=strdup(token);
+//
+//        token = strtok(NULL, "|");
+//        tokens[1] =strdup(token);
+//
+//        token = strtok(NULL, "\n");
+//        tokens[2] =strdup(token);
+//
+////        printf("%s|%s|%s\n",tokens[0],tokens[1],tokens[2]);
+//
+//
+//////////////////////////////////////////////////////////////////////////////////////
+/////////// antoistoixish twn 0,1,2.... pou anaferontai sta predicates stis pragamtikes sxeseis me to mapping
+//
+//        int relations_to_check=0;
+//        for(i=0; i<strlen(tokens[0]); i++)
+//        {
+//            //metraw ta kena pou exw wste na brw kai to poses sxeseis exw
+//            if(line[i] ==' ')
+//            {
+//                relations_to_check ++;
+//            }
+//        }
+//        relations_to_check++; // ta sunolika relation pou exoume na koitaksoume
+//
+//        int * mapping=malloc(sizeof(int)*relations_to_check);
+//        char * re=NULL;
+//        char * sxeseis=strdup(tokens[0]);
+//        char * temp=strtok_r(sxeseis," ",&re);
+//        int id=strtol(temp,NULL,10);
+//        mapping[0]=id;
+//        for(i=1; i<relations_to_check; i++)
+//        {
+//
+//            temp=strtok_r(re," ",&re);
+//            id=strtol(temp,NULL,10);
+//            mapping[i]=id;
+//
+//        }
+//        free(sxeseis);
+//
+//
+/////////////////////////////////////////////////////////////////////////////////////////////
+//
+//
+/////////////////////////////////////////////////////////////////////////////////////////////
+////////proteraiothta twn predicates ..poio 8a ginei 1o,2o klp ston pianaka prio
+//        int total_ques=0;
+//        for(i=0; i<strlen(tokens[1]); i++)
+//        {
+//            if(line[i+strlen(tokens[0])] =='&')
+//            {
+//                total_ques ++;
+//            }
+//        }
+//        total_ques++;
+//
+//        ///debugging printf("Exw sunolika %d sxeseis kai %d queries\n\n",relations_to_check,total_ques);
+//
+//        char* pre =strdup(tokens[1]);
+//        struct Predicates* predicates=predicates_analysis(total_ques,pre,relations,mapping);
+////        continue;
+//        int *prio=predicates_priority(total_ques,predicates);
+//
+//        reset_statistics(relations,original,tokens[0]);
+////        exit(0);
+//        free(pre);
+//
+//
+//////////////////////////////////////////////////////////////////////////////////////////////
+//
+//
+//        int show=0;
+//        for(i=0; i<strlen(tokens[2]); i++)
+//        {
+//            //metraw ta kena pou exw wste na brw kai to poses sxeseis exw
+//            if(tokens[2][i]==' ')
+//            {
+//                show++;
+//            }
+//        }
+//        show++; // ta sunolika rel
+//        shows[Sums_count]=show;
+//
+//
+//
+////for(int i=0; i<rels   ; i++)
+////{
+////    for(int j=0; j<relations[i].num_columns; j++)
+////    {
+////        printf("%lu %lu %lu %lu \n",relations[i].stats.min[j],relations[i].stats.max[j],relations[i].stats.number[j],relations[i].stats.distinct[j]);
+////    }
+////}
+//
+////exit(0);
+//        Intermediate_Result * IR=exec_predicates(relations,predicates,prio,total_ques,relations_to_check,mapping);
+//        uint64_t * sums=Intermediate_Sum(IR,relations,mapping,tokens[2],show);
+//        all_sums[Sums_count]=sums;
+//        Sums_count++;
+//        free(IR->relResults);
+//        for(int i=0; i<relations_to_check; i++)
+//        {
+//
+//            free(IR->Related_Rels[i]);
+//            free(IR->resArray[i]);
+//        }
+//        free(IR->Related_Rels);
+//        free(IR->resArray);
+//        free(IR);
+//
+//
+//
+//        free(tokens[0]);
+//        free(tokens[1]);
+//        free(tokens[2]);
+//        free(tokens);
+//        free(prio);
+//        free(predicates);
+//        free(mapping);
+//
+//    }
+//    for(int i=0; i<rels; i++)
+//    {
+//        free(relations[i].stats.max);
+//        free(relations[i].stats.min);
+//        free(relations[i].stats.distinct);
+//        free(relations[i].stats.number);
+//        for(int j=0; j<relations[i].num_columns; j++)
+//        {
+//            free(relations[i].stats.dis_vals[j]);
+//        }
+//        free(relations[i].stats.dis_vals);
+//
 
 
     }
@@ -1181,6 +1215,7 @@ uint64_t * Equalizer(column_data array,int given_num,int given_mode,int *count)
 
 struct Predicates *predicates_analysis(int total_preds,char * temp_str,struct relation * relations,int * mapping)
 {
+    char * ts=NULL;
     struct Predicates* predicates=malloc(sizeof(struct Predicates)*total_preds);
 
     int counter=0,erwthmata=0;
@@ -1224,19 +1259,19 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str,struct re
             }
             if(token[i] == '.' && predicates[counter].op == '=' && flag==0)
             {
-                token = strtok(token,".");
+                token = strtok_r(token,".",&ts);
                 predicates[counter].relation1 =atoi(token);
-                token=strtok(NULL,"=");
+                token=strtok_r(NULL,"=",&ts);
                 predicates[counter].colum1 = atoi(token);
-                token = strtok(NULL , "&");
+                token = strtok_r(NULL , "&",&ts);
 
                 for(j =0; j<strlen(token); j++)
                 {
                     if(token[j] == '.')
                     {
-                        token = strtok(token,".");
+                        token = strtok_r(token,".",&ts);
                         predicates[counter].relation2 = atoi(token);
-                        token= strtok(NULL,"&");
+                        token= strtok_r(NULL,"&",&ts);
                         predicates[counter].colum2 = atoi(token);
                         flag1 = 1;
                     }
@@ -1513,18 +1548,18 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str,struct re
             }
             else if(token[i] == '.' && (predicates[counter].op == '>' || predicates[counter].op == '<') && flag == 0)
             {
-                token = strtok(token,".");
+                token = strtok_r(token,".",&ts);
                 predicates[counter].relation1 = atoi(token);
                 if(predicates[counter].op == '>')
                 {
-                    token = strtok(NULL,">");
+                    token = strtok_r(NULL,">",&ts);
                 }
                 else if(predicates[counter].op == '<')
                 {
-                    token = strtok(NULL,"<");
+                    token = strtok_r(NULL,"<",&ts);
                 }
                 predicates[counter].colum1 = atoi(token);
-                token = strtok(NULL,"&");
+                token = strtok_r(NULL,"&",&ts);
                 predicates[counter].num = atoi(token);
                 if(predicates[counter].op=='>')
                 {
@@ -1649,11 +1684,11 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str,struct re
             {
                 if(predicates[counter].op == '=')
                 {
-                    token = strtok(token,"=");
+                    token = strtok_r(token,"=",&ts);
                     predicates[counter].num = atoi(token);
-                    token = strtok(NULL,".");
+                    token = strtok_r(NULL,".",&ts);
                     predicates[counter].relation1  = atoi(token);
-                    token = strtok(NULL,"&");
+                    token = strtok_r(NULL,"&",&ts);
                     predicates[counter].colum1 = atoi(token);
                     counter ++;
                     flag = 0;
@@ -1661,11 +1696,11 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str,struct re
                 }
                 else if(predicates[counter].op == '>')
                 {
-                    token = strtok(token,"<");
+                    token = strtok_r(token,"<",&ts);
                     predicates[counter].num = atoi(token);
-                    token = strtok(NULL,".");
+                    token = strtok_r(NULL,".",&ts);
                     predicates[counter].relation1  = atoi(token);
-                    token = strtok(NULL,"&");
+                    token = strtok_r(NULL,"&",&ts);
                     predicates[counter].colum1 = atoi(token);
                     counter ++;
                     flag = 0;
@@ -1673,11 +1708,11 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str,struct re
                 }
                 else if(predicates[counter].op == '<')
                 {
-                    token = strtok(token,"<");
+                    token = strtok_r(token,"<",&ts);
                     predicates[counter].num = atoi(token);
-                    token = strtok(NULL,".");
+                    token = strtok_r(NULL,".",&ts);
                     predicates[counter].relation1  = atoi(token);
-                    token = strtok(NULL,"&");
+                    token = strtok_r(NULL,"&",&ts);
                     predicates[counter].colum1 = atoi(token);
                     counter ++;
                     flag = 0;
@@ -1791,6 +1826,7 @@ int * predicates_priority(int total_preds,struct Predicates *predicates)
 
 void reset_statistics(relation * relations,struct statistics * original,char* rels)
 {
+    char *ts=NULL;
 //    for(int i=0; i<relations[0].num_columns; i++)
 //    {
 //        printf("%lu %lu %lu %lu\n",relations[0].stats.min[i],relations[0].stats.max[i],relations[0].stats.number[i],relations[0].stats.distinct[i]);
@@ -1813,7 +1849,7 @@ void reset_statistics(relation * relations,struct statistics * original,char* re
 //    printf("\n\n");
 
     int i;
-    char * rel=strtok(rels," ");
+    char * rel=strtok_r(rels," ",&ts);
     while(rel)
     {
         int relat=strtol(rel,NULL,10);
@@ -1821,7 +1857,7 @@ void reset_statistics(relation * relations,struct statistics * original,char* re
         memcpy(relations[relat].stats.max,original[relat].max,relations[relat].num_columns*sizeof(uint64_t));
         memcpy(relations[relat].stats.number,original[relat].number,relations[relat].num_columns*sizeof(uint64_t));
         memcpy(relations[relat].stats.distinct,original[relat].distinct,relations[relat].num_columns*sizeof(uint64_t));
-        rel=strtok(NULL," ");
+        rel=strtok_r(NULL," ",&ts);
 
     }
 
