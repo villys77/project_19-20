@@ -81,10 +81,10 @@ int main(int argc,char **argv)
     struct statistics *original =NULL;
     relation *relations=read_file(argv[1],&rels, &original); ////pinakas apo relations
 
-    threadpool * pool_threads=THP_Init(N_THREADS);
+    thread_pool * pool_threads=thread_pool_init(N_THREADS);
     queries_analysis(argv[2],relations,rels,original,pool_threads);
 
-    THP_Destroy(pool_threads);
+    thread_pool_destroy(pool_threads);
     free(relations);
 
     return  0;

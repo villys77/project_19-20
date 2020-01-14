@@ -217,6 +217,7 @@ void sorting(column_data * array0, column_data * array1 ,int start,int end,int w
 //            quickSort(*array1,start,end-1);
 //        }
 //        return;
+//        return;
 //    }
 
     int index_size=256;
@@ -677,7 +678,7 @@ uint64_t * loadRelation(char* fileName)
 }
 
 
-void queries_analysis(char * FileToOpen,relation * relations,int rels,struct statistics * original,threadpool* pool_threads)
+void queries_analysis(char * FileToOpen,relation * relations,int rels,struct statistics * original,thread_pool * pool_threads)
 {
 
     uint64_t *all_sums[512];
@@ -703,7 +704,7 @@ void queries_analysis(char * FileToOpen,relation * relations,int rels,struct sta
         // edw tsekarw an h grammh mou exei megethos megalutero apo ena
         if (strlen(line) < 3)
         {
-            THP_Barrier(pool_threads);
+            thread_pool_barrier(pool_threads);
 
 //            Sums_count--;
 //           printf("mphkxa me %d\n",Sums_count);
@@ -767,7 +768,7 @@ void queries_analysis(char * FileToOpen,relation * relations,int rels,struct sta
         pthread_mutex_init(&my_args->mutex,NULL);
 
 
-        THP_AddJob(pool_threads,(void *)thread_function,my_args);
+        thread_pool_add_job(pool_threads,(void *)thread_function,my_args);
 
         Sums_count++;
 //        pthread_t pid;

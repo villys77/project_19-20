@@ -21,31 +21,31 @@ typedef struct args
 
 void * thread_function(void *);
 
-
-
-typedef struct job{
+typedef struct job
+{
     void   (*function)(void* arg);
-    void*  arg;
-    struct job *next;
+    void * arg;
+    struct job * next;
 } job;
 
-typedef struct job_queue{
+typedef struct queue
+{
     job *first;
     job *last;
     int n_jobs;
-}job_queue;
+}queue;
 
-typedef struct{
+typedef struct thread_pool
+{
     pthread_t **threads;
-    int *threads_id;
+    int * th_ids;
     int jobs2bedone;
     int jobsdone;
     int n_threads;
     int threads_alive;
     int threads_working;
-    job_queue *queue;
+    queue *queue;
     pthread_mutex_t barrier_mtx;
-    pthread_mutex_t working_mtx ;
     pthread_mutex_t empty_queue_mtx;
     pthread_cond_t empty_queue ;
     pthread_mutex_t mtx_queue ;
@@ -53,14 +53,14 @@ typedef struct{
     pthread_mutex_t alive_mtx ;
     pthread_cond_t alive_cond;
 
-}threadpool;
+}thread_pool;
 
-void ThreadJob(threadpool *thpool);
-job *GetJob(threadpool *thpool);
-threadpool *THP_Init(int n_threads);
-void THP_AddJob(threadpool *thp,void (*function)(void* arg),void *arg);
-job_queue *JQ_Init();
-void THP_Wait(threadpool *thp);
-void THP_Barrier(threadpool *thp);
-void THP_Destroy(threadpool *thp);
+void ThreadJob(thread_pool *);
+job * thread_pool_get_job(thread_pool * );
+thread_pool * thread_pool_init(int );
+void thread_pool_add_job(thread_pool * ,void (*function)(void* arg),void *);
+queue * queue_init();
+void thread_pool_wait(thread_pool * );
+void thread_pool_barrier(thread_pool * );
+void thread_pool_destroy(thread_pool * );
 #endif
