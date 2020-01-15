@@ -1,3 +1,7 @@
+//
+// Created by villys77 on 7/1/20.
+//
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "threads.h"
@@ -75,17 +79,18 @@ void * thread_function(void * args)
     }
     total_ques++;
 
-    ///debugging printf("Exw sunolika %d sxeseis kai %d queries\n\n",relations_to_check,total_ques);
-
     char* pre =strdup(tokens[1]);
+
     pthread_mutex_lock(&my_args->mutex);
     struct Predicates* predicates=predicates_analysis(total_ques,pre,my_args->relations,mapping);
     pthread_mutex_unlock(&my_args->mutex);
+
     int *prio=predicates_priority(total_ques,predicates);
 
     pthread_mutex_lock(&my_args->mutex);
     reset_statistics(my_args->relations,my_args->original,tokens[0]);
     pthread_mutex_unlock(&my_args->mutex);
+
     free(pre);
 
 
@@ -143,17 +148,17 @@ thread_pool * thread_pool_init(int n_threads)
     int i;
     thread_pool *pool = (thread_pool *)malloc(sizeof(thread_pool));
     pool->threads = (pthread_t **)malloc(sizeof(pthread_t *)*n_threads);
-    pool->th_ids =(int *)malloc(sizeof(int)*n_threads);
+    pool->threads_ids =(int *)malloc(sizeof(int)*n_threads);
     pool->threads_working=0;
-    pool->queue = queue_init();
+    pool->job_queue = queue_init();
     pool->threads_alive = 0 ;
-    pool->jobs2bedone=0;
-    pool->jobsdone=0;
+    pool->jobs_to_done=0;
+    pool->jobs_done=0;
 
     pthread_mutex_init(&pool->barrier_mtx,NULL);
-    pthread_mutex_init(&pool->mtx_queue,NULL);
+    pthread_mutex_init(&pool->job_queue_mtx,NULL);
     pthread_mutex_init(&pool->empty_queue_mtx,NULL);
-    pthread_cond_init(&pool->empty_queue,NULL);
+    pthread_cond_init(&pool->empty_queue_cond,NULL);
     pthread_cond_init(&pool->barrier_cond,NULL);
 
     pthread_mutex_init(&pool->alive_mtx,NULL);
@@ -162,7 +167,7 @@ thread_pool * thread_pool_init(int n_threads)
     for(i=0;i<n_threads;i++)
     {
         pool->threads[i] = (pthread_t *)malloc(sizeof(pthread_t));
-        pool->th_ids[i] = pthread_create(pool->threads[i], NULL, (void *)ThreadJob, pool);
+        pool->threads_ids[i] = pthread_create(pool->threads[i], NULL, (void *)ThreadJob, pool);
     }
     pthread_mutex_lock(&pool->alive_mtx);
     while (pool->threads_alive != n_threads)
@@ -180,9 +185,9 @@ void thread_pool_add_job(thread_pool * pool,void (*function)(void* arg),void *ar
     newjob->function = function;
     newjob->arg = arg;
     newjob->next = NULL;
-    pthread_mutex_lock(&pool->mtx_queue);
-    pool->jobs2bedone++;
-    queue *jq = pool->queue;
+    pthread_mutex_lock(&pool->job_queue_mtx);
+    pool->jobs_to_done++;
+    queue *jq = pool->job_queue;
     if(jq->n_jobs == 0) //first job
     {
         jq->first = jq->last = newjob;
@@ -192,9 +197,9 @@ void thread_pool_add_job(thread_pool * pool,void (*function)(void* arg),void *ar
         jq->last->next = newjob;
         jq->last = newjob;
     }
-    pool->queue->n_jobs++;
-    pthread_cond_signal(&pool->empty_queue);
-    pthread_mutex_unlock(&pool->mtx_queue) ;
+    pool->job_queue->n_jobs++;
+    pthread_cond_signal(&pool->empty_queue_cond);
+    pthread_mutex_unlock(&pool->job_queue_mtx) ;
     //unlock mutex
 }
 
@@ -212,18 +217,18 @@ job * thread_pool_get_job(thread_pool * pool)
 {
     job *j;
     pthread_mutex_lock(&pool->empty_queue_mtx);
-    while(pool->queue->n_jobs==0)
+    while(pool->job_queue->n_jobs==0)
     {
-        pthread_cond_wait(&pool->empty_queue,&pool->empty_queue_mtx);
+        pthread_cond_wait(&pool->empty_queue_cond,&pool->empty_queue_mtx);
     }
-    pthread_mutex_lock(&pool->mtx_queue);
+    pthread_mutex_lock(&pool->job_queue_mtx);
     pthread_mutex_lock(&pool->barrier_mtx);
-    pool->queue->n_jobs--;
+    pool->job_queue->n_jobs--;
     pthread_mutex_unlock(&pool->barrier_mtx);
     pthread_mutex_unlock(&pool->empty_queue_mtx);
-    j = pool->queue->first;
-    pool->queue->first = j->next;
-    pthread_mutex_unlock(&pool->mtx_queue);
+    j = pool->job_queue->first;
+    pool->job_queue->first = j->next;
+    pthread_mutex_unlock(&pool->job_queue_mtx);
     return j;
 }
 
@@ -246,7 +251,7 @@ void ThreadJob(thread_pool * pool)
         function(arg);
         pthread_mutex_lock(&pool->barrier_mtx);
         pool->threads_working--;
-        pool->jobsdone++;
+        pool->jobs_done++;
         if(pool->threads_working==0)
         {
             pthread_cond_signal(&pool->barrier_cond);
@@ -262,43 +267,43 @@ void ThreadJob(thread_pool * pool)
 void thread_pool_barrier(thread_pool * pool)
 {
     pthread_mutex_lock(&pool->barrier_mtx);
-    while(pool->jobsdone!=pool->jobs2bedone || pool->threads_working!=0)
+    while(pool->jobs_done!=pool->jobs_to_done || pool->threads_working!=0)
     {
         pthread_cond_wait(&pool->barrier_cond,&pool->barrier_mtx);
     }
-    pool->jobs2bedone=0;
-    pool->jobsdone=0;
+    pool->jobs_to_done=0;
+    pool->jobs_done=0;
     pthread_mutex_unlock(&pool->barrier_mtx);
 }
 
 void thread_pool_destroy(thread_pool * pool)
 {
     void *ret;
-    for(int i=0;i<N_THREADS;i++)
+    for(int i=0;i<THREADS_NUM;i++)
     {
         thread_pool_add_job(pool,(void*)pthread_exit,NULL);
     }
-    for(int i=0;i<N_THREADS;i++)
+    for(int i=0;i<THREADS_NUM;i++)
     {
         pthread_join(*pool->threads[i],&ret);
     }
     pthread_mutex_destroy(&pool->barrier_mtx);
     pthread_mutex_destroy(&pool->empty_queue_mtx);
-    pthread_cond_destroy(&pool->empty_queue);
-    pthread_mutex_destroy(&pool->mtx_queue);
+    pthread_cond_destroy(&pool->empty_queue_cond);
+    pthread_mutex_destroy(&pool->job_queue_mtx);
     pthread_cond_destroy(&pool->barrier_cond);
     pthread_mutex_destroy(&pool->alive_mtx);
     pthread_cond_destroy(&pool->alive_cond);
 
-    for(int i=0; i<N_THREADS; i++)
+    for(int i=0; i<THREADS_NUM; i++)
     {
         free(pool->threads[i]);
     }
     free(pool->threads);
-    free(pool->th_ids);
-    free(pool->queue->first);
-    free(pool->queue->last);
-    free(pool->queue);
+    free(pool->threads_ids);
+    free(pool->job_queue->first);
+    free(pool->job_queue->last);
+    free(pool->job_queue);
 
     free(pool);
 

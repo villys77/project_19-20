@@ -16,7 +16,6 @@
 #include "Result.h"
 #include "Intermediate_Result.h"
 #include "threads.h"
-//#include <pthread.h>
 
 
 #define n 8
