@@ -85,6 +85,8 @@ int main(int argc,char **argv)
     queries_analysis(argv[2],relations,rels,original,pool_threads);
 
     thread_pool_destroy(pool_threads);
+    if(original)
+        free(original);
     free(relations);
 
     return  0;

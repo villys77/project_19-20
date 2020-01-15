@@ -83,8 +83,9 @@ void * thread_function(void * args)
     pthread_mutex_unlock(&my_args->mutex);
     int *prio=predicates_priority(total_ques,predicates);
 
-//    reset_statistics(relations,original,tokens[0]);
-//        exit(0);
+    pthread_mutex_lock(&my_args->mutex);
+    reset_statistics(my_args->relations,my_args->original,tokens[0]);
+    pthread_mutex_unlock(&my_args->mutex);
     free(pre);
 
 
@@ -111,8 +112,6 @@ void * thread_function(void * args)
     my_args->all_sums[my_args->Sums_count]=sums;
 
 
-
-
     free(IR->relResults);
     for(int i=0; i<relations_to_check; i++)
     {
@@ -134,6 +133,8 @@ void * thread_function(void * args)
     free(predicates);
     free(mapping);
 
+    free(my_args->line);
+    pthread_mutex_destroy(&my_args->mutex);
 }
 
 
@@ -246,8 +247,14 @@ void ThreadJob(thread_pool * pool)
         pthread_mutex_lock(&pool->barrier_mtx);
         pool->threads_working--;
         pool->jobsdone++;
-        if(pool->threads_working==0) pthread_cond_signal(&pool->barrier_cond);
+        if(pool->threads_working==0)
+        {
+            pthread_cond_signal(&pool->barrier_cond);
+        }
         pthread_mutex_unlock(&pool->barrier_mtx);
+        free(my_job->arg);
+        free(my_job);
+
     }
 }
 
@@ -283,8 +290,17 @@ void thread_pool_destroy(thread_pool * pool)
     pthread_mutex_destroy(&pool->alive_mtx);
     pthread_cond_destroy(&pool->alive_cond);
 
+    for(int i=0; i<N_THREADS; i++)
+    {
+        free(pool->threads[i]);
+    }
     free(pool->threads);
     free(pool->th_ids);
+    free(pool->queue->first);
+    free(pool->queue->last);
+    free(pool->queue);
+
     free(pool);
+
 
 }

@@ -13,6 +13,8 @@ typedef struct args
     char * line;
     int rels;
     relation * relations;
+    struct statistics * original;
+
     int Sums_count;
     uint64_t **all_sums;
     uint64_t *shows;

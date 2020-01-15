@@ -610,7 +610,7 @@ relation * read_file(char * filename,int *rels ,struct statistics ** original)
                         if(z+relations[i].stats.min[j]<dist_size)
                         {
                             relations[i].stats.dis_vals[j][c]=z+relations[i].stats.min[j];
-                            z++;
+//                            z++;
 
                         }
 
@@ -761,7 +761,7 @@ void queries_analysis(char * FileToOpen,relation * relations,int rels,struct sta
         my_args->line=strdup(line);
         my_args->rels=rels;
         my_args->relations=relations;
-
+        my_args->original=original;
         my_args->Sums_count=Sums_count;
         my_args->shows=shows;
         my_args->all_sums=all_sums;
@@ -899,22 +899,26 @@ void queries_analysis(char * FileToOpen,relation * relations,int rels,struct sta
 //        free(predicates);
 //        free(mapping);
 //
-//    }
-//    for(int i=0; i<rels; i++)
-//    {
-//        free(relations[i].stats.max);
-//        free(relations[i].stats.min);
-//        free(relations[i].stats.distinct);
-//        free(relations[i].stats.number);
-//        for(int j=0; j<relations[i].num_columns; j++)
-//        {
-//            free(relations[i].stats.dis_vals[j]);
-//        }
-//        free(relations[i].stats.dis_vals);
-//
-
-
     }
+    for(int i=0; i<rels; i++)
+    {
+        free(relations[i].stats.max);
+        free(relations[i].stats.min);
+        free(relations[i].stats.distinct);
+        free(relations[i].stats.number);
+        free(original[i].max);
+        free(original[i].min);
+        free(original[i].distinct);
+        free(original[i].number);
+//        free(original);
+
+        for (int j = 0; j < relations[i].num_columns; j++)
+        {
+            free(relations[i].stats.dis_vals[j]);
+        }
+        free(relations[i].stats.dis_vals);
+    }
+
     free(line);
     fclose(file);
 
@@ -1586,13 +1590,13 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str,struct re
                     }
                     else
                     {
-                        relations[mapping[predicates[counter].relation1]].stats.distinct[predicates[counter].colum1]=((prev_max-min )/(prev_max-prev_min))*prev_dis;
-                        relations[mapping[predicates[counter].relation1]].stats.number[predicates[counter].colum1]=((prev_max-min )/(prev_max-prev_min))*prev_num;
+                        relations[mapping[predicates[counter].relation1]].stats.distinct[predicates[counter].colum1]=(((prev_max-min )*prev_dis)/(prev_max-prev_min));
+                        relations[mapping[predicates[counter].relation1]].stats.number[predicates[counter].colum1]=(((prev_max-min )*prev_num)/(prev_max-prev_min));
                     }
 
 //                    printf("%lu\n",relations[mapping[predicates[counter].relation1]].stats.distinct[predicates[counter].colum1]);
                     uint64_t number=relations[mapping[predicates[counter].relation1]].stats.number[predicates[counter].colum1];
-//                    printf("%lu\n",number);
+
                     /////////////
 
                     //////oi upoloipes sthles
@@ -1639,8 +1643,8 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str,struct re
                     }
                     else
                     {
-                    relations[mapping[predicates[counter].relation1]].stats.distinct[predicates[counter].colum1]=((max-prev_min )/(prev_max-prev_min))*prev_dis;
-                    relations[mapping[predicates[counter].relation1]].stats.number[predicates[counter].colum1]=((max-prev_min )/(prev_max-prev_min))*prev_num;
+                    relations[mapping[predicates[counter].relation1]].stats.distinct[predicates[counter].colum1]=((max-prev_min )*prev_dis)/(prev_max-prev_min);
+                    relations[mapping[predicates[counter].relation1]].stats.number[predicates[counter].colum1]=(((max-prev_min )*prev_num)/(prev_max-prev_min));
 
                     }
 
