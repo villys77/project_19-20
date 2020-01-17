@@ -2,10 +2,9 @@
 // Created by villys77 on 7/1/20.
 //
 
-#include <stdio.h>
 #include <stdlib.h>
 #include "threads.h"
-#include "functions.h"
+#include "queries_management.h"
 #include "Intermediate_Result.h"
 #include <string.h>
 

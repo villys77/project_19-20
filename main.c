@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "structs.h"
-#include "functions.h"
+#include "queries_management.h"
 #include "threads.h"
 #include <stdlib.h>
 #include <string.h>
