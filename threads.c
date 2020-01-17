@@ -84,6 +84,8 @@ void * thread_function(void * args)
     struct Predicates* predicates=predicates_analysis(total_ques,pre,my_args->relations,mapping);
     pthread_mutex_unlock(&my_args->mutex);
 
+//    predicates_priority_with_st atistics(my_args->relations,total_ques,predicates,mapping);
+
     int *prio=predicates_priority(total_ques,predicates);
 
     pthread_mutex_lock(&my_args->mutex);

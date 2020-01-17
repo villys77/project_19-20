@@ -6,11 +6,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdbool.h>
 #include "queries_management.h"
 #include "structs.h"
 #include "Result.h"
@@ -19,235 +14,6 @@
 #include "sort-join_funs.h"
 
 
-
-
-
-
-
-
-relation * read_file(char * filename,int *rels ,struct statistics ** original)
-{
-    char * name=malloc(sizeof(char)*strlen(filename)+1);
-    strcpy(name,filename);
-
-    char *dataset=strtok(name,"/");
-    sprintf(dataset,"%s/",dataset);
-
-    FILE *file;
-    file = fopen(filename, "r"); ////read file
-    if (file == NULL)
-    {
-        printf("Error! Please give correct arguments\n");
-        exit(0);
-    }
-
-
-    char *line = NULL;
-    size_t len = 0;
-    ssize_t my_read;
-
-    int size_of_file = 0;
-    while (!feof(file))
-    {
-        if ((my_read = getline(&line, &len, file)) != -1)
-        {
-            size_of_file++; //// count lines of doc
-        }
-    }
-    *original=malloc(sizeof(struct statistics)*size_of_file);
-    *rels=size_of_file;
-    rewind(file);
-
-    relation * relations=malloc(size_of_file* sizeof(relation));
-
-
-    int i=0;
-    while (!feof(file)) ////dinw times sta stoixeia tou prwtou pinaka
-    {
-        if ((my_read = getline(&line, &len, file)) != -1)
-        {
-            line[strcspn(line, "\n")] = 0;
-            char * path=malloc(sizeof(char)*(strlen(line)+strlen(dataset)+3));
-            sprintf(path,"%s%s",dataset,line);
-
-            relations[i].data=loadRelation(path);
-            relations[i].num_tuples=relations[i].data[0];
-            relations[i].num_columns=relations[i].data[1];
-//////////
-/////statistics
-            relations[i].stats.min=malloc(sizeof(uint64_t)* relations[i].num_columns);
-            relations[i].stats.max=malloc(sizeof(uint64_t)* relations[i].num_columns);
-            relations[i].stats.number=malloc(sizeof(uint64_t)* relations[i].num_columns);
-            relations[i].stats.distinct=malloc(sizeof(uint64_t)* relations[i].num_columns);
-            relations[i].stats.dis_vals=malloc(sizeof(int*)*relations[i].num_columns);
-
-
-            (*original)[i].min=malloc(sizeof(uint64_t)* relations[i].num_columns);
-            (*original)[i].max=malloc(sizeof(uint64_t)* relations[i].num_columns);
-            (*original)[i].number=malloc(sizeof(uint64_t)* relations[i].num_columns);
-            (*original)[i].distinct=malloc(sizeof(uint64_t)* relations[i].num_columns);
-
-            relations[i].data+=2;
-
-
-
-            int j,k,id=0;
-            for(j=0; j<relations[i].num_columns; j++)
-            {
-                if (j > 0)
-                {
-                    id += relations[i].num_tuples;
-                }
-                uint64_t temp_max = 0;
-                uint64_t temp_min = 100000000;
-                for (k = id; k < id + relations[i].num_tuples; k++)
-                {
-                    if (relations[i].data[k] > temp_max)
-                    {
-                        temp_max = relations[i].data[k];
-                    }
-                    if (relations[i].data[k] < temp_min)
-                    {
-                        temp_min = relations[i].data[k];
-                    }
-                }
-                relations[i].stats.max[j] = temp_max;
-                relations[i].stats.min[j] = temp_min;
-                relations[i].stats.number[j] = relations[i].num_tuples;
-
-                (*original)[i].max[j] = temp_max;
-                (*original)[i].min[j] = temp_min;
-                (*original)[i].number[j] = relations[i].num_tuples;
-
-            }
-
-            bool **dists;
-
-            uint64_t *dist_size=malloc(sizeof(uint64_t)*relations[i].num_columns);
-            int flag_n=0;
-            dists = malloc(sizeof(bool*) * relations[i].num_columns);
-            for(j=0; j<relations[i].num_columns; j++)
-            {
-                dist_size[j]=relations[i].stats.max[j]-relations[i].stats.min[j]+1;
-                if(relations[i].stats.max[j]-relations[i].stats.min[j]+1>50000000)
-                {
-                    flag_n=1;
-                    dist_size[j]=50000000;
-                }
-                dists[j]=malloc(sizeof(bool)*dist_size[j]);
-                relations[i].stats.dis_vals[j]=malloc(sizeof(int)*dist_size[j]);
-
-                uint64_t z;
-
-
-                for(z=0; z<dist_size[j]; z++)
-                {
-                    relations[i].stats.dis_vals[j][z]=0;
-                    dists[j][z]=false;
-                }
-            }
-
-            id=0;
-            for(j=0; j<relations[i].num_columns; j++)
-            {
-                if (j > 0)
-                {
-                    id += relations[i].num_tuples;
-                }
-                for (k = id; k < id + relations[i].num_tuples; k++)
-                {
-                    if(flag_n==1)
-                    {
-                        dists[j][(relations[i].data[k]-relations[i].stats.min[j]) % 50000000]=true;
-                    }
-                    else
-                    {
-                        dists[j][relations[i].data[k]-relations[i].stats.min[j]]=true;
-                    }
-                }
-            }
-
-            uint64_t counter=0;
-
-            int c=0;
-            for(j=0; j<relations[i].num_columns; j++)
-            {
-                uint64_t z;
-                counter=0;
-                for(z=0; z<dist_size[j]; z++)
-                {
-                    if(dists[j][z]==true)
-                    {
-                        if(z+relations[i].stats.min[j]<dist_size[j] && c<dist_size[j])
-                        {
-                            relations[i].stats.dis_vals[j][c]=(int)z+(int)relations[i].stats.min[j];
-                            c++;
-
-                        }
-
-                        counter++;
-                    }
-                }
-                relations[i].stats.distinct[j]=counter;
-                (*original)[i].distinct[j]=counter;
-
-            }
-
-//////////////
-//////////////
-
-            free(path);
-            for(k=0;k < relations[i].num_columns; k++)
-            {
-                free(dists[k]);
-            }
-            free(dist_size);
-            free(dists);
-
-        }
-
-        i++;
-    }
-    free(name);
-
-    fclose(file);
-    free(line);
-    return relations;
-}
-
-uint64_t * loadRelation(char* fileName)
-{
-    int fp = open(fileName, O_RDONLY);
-
-    if (fp == -1)
-    {
-        perror("Error while opening the file.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    struct stat sb;
-
-    if (fstat(fp,&sb)==-1)
-    {
-        perror("stat\n");
-        exit(EXIT_FAILURE);
-    }
-
-    size_t length = sb.st_size;
-
-    uint64_t* ptr = mmap(NULL, length ,PROT_READ, MAP_PRIVATE, fp, 0);
-
-    if (ptr == MAP_FAILED)
-    {
-        perror("mmap");
-        exit(EXIT_FAILURE);
-    }
-
-    close(fp);
-    return ptr;
-
-
-}
 
 
 void queries_analysis(char * FileToOpen,relation * relations,int rels,struct statistics * original,thread_pool * pool_threads)
@@ -486,7 +252,9 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
             {
                 free(column.tuples);
                 free(filter);
-                break;
+                IR->relResults[predicates[prio[j]].relation1] = 0;
+                return IR;
+//                break;
             }
             free(column.tuples);
             free(filter);
@@ -669,7 +437,7 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str,struct re
     return predicates;
 }
 
-void count_statistics(relation * relations,int * mapping,struct Predicates * predicates, int counter,int given_mode  )
+uint64_t count_statistics(relation * relations,int * mapping,struct Predicates * predicates, int counter,int given_mode  )
 {
     ///1 gia filtra me =
     ///2 gia filtra me >
@@ -679,6 +447,7 @@ void count_statistics(relation * relations,int * mapping,struct Predicates * pre
 
     if(given_mode==1)
     {
+//        printf("mphka 1\n");
         //////sthlh A
 
         uint64_t max=relations[mapping[predicates[counter].relation1]].stats.max[predicates[counter].colum1];
@@ -700,6 +469,7 @@ void count_statistics(relation * relations,int * mapping,struct Predicates * pre
         {
             if(relations[mapping[predicates[counter].relation1]].stats.dis_vals[predicates[counter].colum1][k]==predicates[counter].num)
             {
+//                printf("mphka gamwww\n");
                 dis_flag=1;
                 break;
             }
@@ -751,6 +521,7 @@ void count_statistics(relation * relations,int * mapping,struct Predicates * pre
         }
         ////////
 
+        return 0;
     }
     else if(given_mode==2)
     {
@@ -799,6 +570,7 @@ void count_statistics(relation * relations,int * mapping,struct Predicates * pre
             }
         }
         ////////
+        return 0;
     }
     else if(given_mode==3)
     {
@@ -855,6 +627,7 @@ void count_statistics(relation * relations,int * mapping,struct Predicates * pre
 
 
         ////////
+        return 0;
 
     }
     else if(given_mode==4)
@@ -932,9 +705,12 @@ void count_statistics(relation * relations,int * mapping,struct Predicates * pre
                 }
             }
         }
+        return 0;
+
     }
     else if(given_mode==5)
     {
+//        printf("mphka 5\n");
         uint64_t prev_max_rel1=relations[mapping[predicates[counter].relation1]].stats.max[predicates[counter].colum1];
         uint64_t prev_min_rel1=relations[mapping[predicates[counter].relation1]].stats.min[predicates[counter].colum1];
 
@@ -977,6 +753,7 @@ void count_statistics(relation * relations,int * mapping,struct Predicates * pre
         relations[mapping[predicates[counter].relation1]].stats.number[predicates[counter].colum1]=(prev_number_rel1*prev_number_rel2)/num;
         relations[mapping[predicates[counter].relation2]].stats.number[predicates[counter].colum2]=(prev_number_rel1*prev_number_rel2)/num;
 
+//        printf("%lu %lu %lu\n",prev_number_rel1,prev_number_rel2,num);
         uint64_t plithos=relations[mapping[predicates[counter].relation1]].stats.number[predicates[counter].colum1];
 
         relations[mapping[predicates[counter].relation1]].stats.distinct[predicates[counter].colum1]=(prev_dis_rel1*prev_dis_rel2)/num;
@@ -1030,6 +807,7 @@ void count_statistics(relation * relations,int * mapping,struct Predicates * pre
             }
         }
 
+        return plithos;
     }
 
 }
@@ -1125,7 +903,7 @@ int * predicates_priority(int total_preds,struct Predicates *predicates)
     return prio_array;
 }
 
-int * predicates_priority_with_statistics(int total_preds,struct Predicates *predicates,int * mapping)
+int * predicates_priority_with_statistics(relation * relations,int total_preds,struct Predicates *predicates,int * mapping)
 {
     int i,j;
     int* prio_array = malloc(total_preds*(sizeof(int)));
@@ -1139,11 +917,13 @@ int * predicates_priority_with_statistics(int total_preds,struct Predicates *pre
     {
         if(predicates[i].num != -1)
         {
-            predicates[i].prio = prio;
+//            printf("%d.%d %c %d\n",predicates[i].relation1,predicates[i].colum1,predicates[i].op,predicates[i].num);
+//            predicates[i].prio = prio;
             prio ++;
         }
     }
 
+    int num_of_joins=0;
     for(i=0; i<total_preds; i++)
     {
         if(predicates[i].num==-1)
@@ -1152,18 +932,61 @@ int * predicates_priority_with_statistics(int total_preds,struct Predicates *pre
             {
                 if(predicates[i].relation1==predicates[i].relation2)
                 {
-                    predicates[i].prio=prio;
+//                    predicates[i].prio=prio;
                     prio++;
                 }
                 else if(mapping[predicates[i].relation1]==mapping[predicates[i].relation2])
                 {
-                    predicates[i].prio=prio;
+//                    predicates[i].prio=prio;
                     prio++;
                 }
                 else
                 {
-                    //Join Enumeration();
+                    num_of_joins++;
+//                    printf("%d.%d %c %d.%d\n",predicates[i].relation1,predicates[i].colum1,predicates[i].op,predicates[i].relation2,predicates[i].colum2);
+//                    //Join Enumeration();
                 }
+            }
+        }
+    }
+
+    int c=0;
+    uint64_t F[total_preds][num_of_joins];
+    for(i=0 ; i<total_preds; i++)
+    {
+        for (c=0; c< num_of_joins; c++)
+        {
+            F[i][c]=-1;
+        }
+    }
+///exw kanei malakia me to i
+
+
+    for(i=0; i<total_preds; i++)
+    {
+        if (predicates[i].num == -1)
+        {
+            if (predicates[i].op == '=')
+            {
+                if(predicates[i].relation1!=predicates[i].relation2 && mapping[predicates[i].relation1]!=mapping[predicates[i].relation2])
+                {
+                    uint64_t kati=count_statistics(relations,mapping,predicates,i,5);
+//                    printf("%lu\n",kati);
+                    F[i][c]=count_statistics(relations,mapping,predicates,i,5);
+                    c++;
+                }
+            }
+        }
+    }
+
+    for(i=0 ; i<total_preds; i++)
+    {
+        for (c=0; c< num_of_joins; c++)
+        {
+            if(F[i][c]!=-1)
+            {
+                printf("%lu\n",F[i][c]);
+
             }
         }
     }

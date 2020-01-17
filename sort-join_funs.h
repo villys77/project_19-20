@@ -11,6 +11,9 @@
 
 #define n 8
 
+relation * read_file(char*,int *,struct statistics**);
+uint64_t * loadRelation(char* );
+
 void swap(uint64_t * a, uint64_t * b);
 int partition (column_data, int , int);
 void quickSort(column_data, int , int);

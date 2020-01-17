@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <string.h>
 #include "structs.h"
-#include "Result.h"
 
 Result *ListInit()
 {

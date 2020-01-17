@@ -6,9 +6,244 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdbool.h>
 #include "structs.h"
 #include "Result.h"
 #include "sort-join_funs.h"
+
+
+relation * read_file(char * filename,int *rels ,struct statistics ** original)
+{
+    char * name=malloc(sizeof(char)*strlen(filename)+1);
+    strcpy(name,filename);
+
+    char *dataset=strtok(name,"/");
+    sprintf(dataset,"%s/",dataset);
+
+    FILE *file;
+    file = fopen(filename, "r"); ////read file
+    if (file == NULL)
+    {
+        printf("Error! Please give correct arguments\n");
+        exit(0);
+    }
+
+
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t my_read;
+
+    int size_of_file = 0;
+    while (!feof(file))
+    {
+        if ((my_read = getline(&line, &len, file)) != -1)
+        {
+            size_of_file++; //// count lines of doc
+        }
+    }
+    *original=malloc(sizeof(struct statistics)*size_of_file);
+    *rels=size_of_file;
+    rewind(file);
+
+    relation * relations=malloc(size_of_file* sizeof(relation));
+
+
+    int i=0;
+    while (!feof(file)) ////dinw times sta stoixeia tou prwtou pinaka
+    {
+        if ((my_read = getline(&line, &len, file)) != -1)
+        {
+            line[strcspn(line, "\n")] = 0;
+            char * path=malloc(sizeof(char)*(strlen(line)+strlen(dataset)+3));
+            sprintf(path,"%s%s",dataset,line);
+
+            relations[i].data=loadRelation(path);
+            relations[i].num_tuples=relations[i].data[0];
+            relations[i].num_columns=relations[i].data[1];
+//////////
+/////statistics
+            relations[i].stats.min=malloc(sizeof(uint64_t)* relations[i].num_columns);
+            relations[i].stats.max=malloc(sizeof(uint64_t)* relations[i].num_columns);
+            relations[i].stats.number=malloc(sizeof(uint64_t)* relations[i].num_columns);
+            relations[i].stats.distinct=malloc(sizeof(uint64_t)* relations[i].num_columns);
+            relations[i].stats.dis_vals=malloc(sizeof(int*)*relations[i].num_columns);
+
+
+            (*original)[i].min=malloc(sizeof(uint64_t)* relations[i].num_columns);
+            (*original)[i].max=malloc(sizeof(uint64_t)* relations[i].num_columns);
+            (*original)[i].number=malloc(sizeof(uint64_t)* relations[i].num_columns);
+            (*original)[i].distinct=malloc(sizeof(uint64_t)* relations[i].num_columns);
+
+            relations[i].data+=2;
+
+
+
+            int j,k,id=0;
+            for(j=0; j<relations[i].num_columns; j++)
+            {
+                if (j > 0)
+                {
+                    id += relations[i].num_tuples;
+                }
+                uint64_t temp_max = 0;
+                uint64_t temp_min = 100000000;
+                for (k = id; k < id + relations[i].num_tuples; k++)
+                {
+                    if (relations[i].data[k] > temp_max)
+                    {
+                        temp_max = relations[i].data[k];
+                    }
+                    if (relations[i].data[k] < temp_min)
+                    {
+                        temp_min = relations[i].data[k];
+                    }
+                }
+                relations[i].stats.max[j] = temp_max;
+                relations[i].stats.min[j] = temp_min;
+                relations[i].stats.number[j] = relations[i].num_tuples;
+
+                (*original)[i].max[j] = temp_max;
+                (*original)[i].min[j] = temp_min;
+                (*original)[i].number[j] = relations[i].num_tuples;
+
+            }
+
+            bool **dists;
+
+            uint64_t *dist_size=malloc(sizeof(uint64_t)*relations[i].num_columns);
+            int flag_n=0;
+            dists = malloc(sizeof(bool*) * relations[i].num_columns);
+            for(j=0; j<relations[i].num_columns; j++)
+            {
+                dist_size[j]=relations[i].stats.max[j]-relations[i].stats.min[j]+1;
+                if(relations[i].stats.max[j]-relations[i].stats.min[j]+1>50000000)
+                {
+                    flag_n=1;
+                    dist_size[j]=50000000;
+                }
+                dists[j]=malloc(sizeof(bool)*dist_size[j]);
+                relations[i].stats.dis_vals[j]=malloc(sizeof(int)*dist_size[j]);
+
+                uint64_t z;
+
+
+                for(z=0; z<dist_size[j]; z++)
+                {
+                    relations[i].stats.dis_vals[j][z]=0;
+                    dists[j][z]=false;
+                }
+            }
+
+            id=0;
+            for(j=0; j<relations[i].num_columns; j++)
+            {
+                if (j > 0)
+                {
+                    id += relations[i].num_tuples;
+                }
+                for (k = id; k < id + relations[i].num_tuples; k++)
+                {
+                    if(flag_n==1)
+                    {
+                        dists[j][(relations[i].data[k]-relations[i].stats.min[j]) % 50000000]=true;
+                    }
+                    else
+                    {
+                        dists[j][relations[i].data[k]-relations[i].stats.min[j]]=true;
+                    }
+                }
+            }
+
+            uint64_t counter=0;
+
+            int c;
+            for(j=0; j<relations[i].num_columns; j++)
+            {
+                uint64_t z;
+                counter=0;
+                c=0;
+                for(z=0; z<dist_size[j]; z++)
+                {
+                    if(dists[j][z]==true)
+                    {
+                        if(z+relations[i].stats.min[j]<dist_size[j] && c<dist_size[j])
+                        {
+                            relations[i].stats.dis_vals[j][c]=(int)z+(int)relations[i].stats.min[j];
+
+                            c++;
+
+                        }
+
+                        counter++;
+                    }
+                }
+
+                relations[i].stats.distinct[j]=counter;
+                (*original)[i].distinct[j]=counter;
+
+            }
+
+//////////////
+//////////////
+
+            free(path);
+            for(k=0;k < relations[i].num_columns; k++)
+            {
+                free(dists[k]);
+            }
+            free(dist_size);
+            free(dists);
+
+        }
+
+        i++;
+    }
+    free(name);
+
+    fclose(file);
+    free(line);
+    return relations;
+}
+
+uint64_t * loadRelation(char* fileName)
+{
+    int fp = open(fileName, O_RDONLY);
+
+    if (fp == -1)
+    {
+        perror("Error while opening the file.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    struct stat sb;
+
+    if (fstat(fp,&sb)==-1)
+    {
+        perror("stat\n");
+        exit(EXIT_FAILURE);
+    }
+
+    size_t length = sb.st_size;
+
+    uint64_t* ptr = mmap(NULL, length ,PROT_READ, MAP_PRIVATE, fp, 0);
+
+    if (ptr == MAP_FAILED)
+    {
+        perror("mmap");
+        exit(EXIT_FAILURE);
+    }
+
+    close(fp);
+    return ptr;
+
+
+}
+
 
 
 void swap(uint64_t * a, uint64_t * b)

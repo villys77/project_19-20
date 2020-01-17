@@ -34,22 +34,7 @@ Intermediate_Result* create_Intermediate_Result(int numRel)
 
     return mid;
 }
-void PrintMe(Intermediate_Result* mid,int allRels)
-{
 
-    int i, j;
-    for (i=0; i<allRels; i++)
-    {
-        if(mid->relResults[i] != -1)
-        {
-            printf("rel %d %lu\n",i,mid->relResults[i]);
-            for(j=0; j<mid->relResults[i]; j++)
-            {
-                printf("%lu\n",mid->resArray[i][j]);
-            }
-        }
-    }
-}
 
 Intermediate_Result* FilterUpdate (Intermediate_Result* mid, int newResults ,uint64_t * filter, int rel,int allRels)
 {

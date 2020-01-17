@@ -1,9 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "structs.h"
 #include "queries_management.h"
 #include "threads.h"
-#include <stdlib.h>
-#include <string.h>
+#include "sort-join_funs.h"
 
 int main(int argc,char **argv)
 {
@@ -17,7 +18,6 @@ int main(int argc,char **argv)
     struct statistics *original =NULL;
     int rels=0;
     relation *relations=read_file(argv[1],&rels, &original); ////pinakas apo relations
-
     thread_pool * pool_threads=thread_pool_init(THREADS_NUM); ////Thread Pool
     queries_analysis(argv[2],relations,rels,original,pool_threads);
 
