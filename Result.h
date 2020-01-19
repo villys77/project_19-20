@@ -7,6 +7,7 @@
 
 #include "structs.h"
 
+
 Result* ListInit();
 void InsertResult(uint64_t,uint64_t,Result*);
 void PrintResults(Result*);

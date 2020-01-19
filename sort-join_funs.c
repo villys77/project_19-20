@@ -174,7 +174,6 @@ relation * read_file(char * filename,int *rels ,struct statistics ** original)
                         if(z+relations[i].stats.min[j]<dist_size[j] && c<dist_size[j])
                         {
                             relations[i].stats.dis_vals[j][c]=(int)z+(int)relations[i].stats.min[j];
-
                             c++;
 
                         }
@@ -313,7 +312,7 @@ column_data Sort(column_data array0)
         array1.tuples[i].payload=0;
 
     }
-//    uint64_t temp=array0.tuples[0].key;
+
     int flag=0;
     for(int i=1 ; i<array0.num_tuples; i++)
     {
@@ -355,7 +354,6 @@ column_data Sort(column_data array0)
         bt--;
     }
 
-//    printf("bt = %d\n",bt);
     sorting(&array0,&array1,0,array0.num_tuples,1,bt);
 
     free(array0.tuples);

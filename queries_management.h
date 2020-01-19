@@ -7,6 +7,7 @@
 
 #include "structs.h"
 #include "threads.h"
+
 void queries_analysis(char * ,relation*,int,struct statistics*,thread_pool *);
 struct Predicates* predicates_analysis(int,char *,relation*,int *);
 int * predicates_priority(int,struct Predicates *);

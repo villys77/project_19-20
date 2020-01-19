@@ -1,7 +1,7 @@
 //
 // Created by villys77 on 7/1/20.
 //
-
+#include <stdio.h>
 #include <stdlib.h>
 #include "threads.h"
 #include "queries_management.h"
@@ -28,7 +28,6 @@ void * thread_function(void * args)
     token = strtok_r(NULL, "\n",&ts);
     tokens[2]  =strdup(token);
 
-//        printf("%s|%s|%s\n",tokens[0],tokens[1],tokens[2]);
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -78,13 +77,17 @@ void * thread_function(void * args)
     }
     total_ques++;
 
-    char* pre =strdup(tokens[1]);
+        char* pre =strdup(tokens[1]);
 
     pthread_mutex_lock(&my_args->mutex);
     struct Predicates* predicates=predicates_analysis(total_ques,pre,my_args->relations,mapping);
     pthread_mutex_unlock(&my_args->mutex);
 
-//    predicates_priority_with_st atistics(my_args->relations,total_ques,predicates,mapping);
+//    pthread_mutex_lock(&my_args->mutex);
+//    int * prio=predicates_priority_with_statistics(my_args->relations,total_ques,predicates,mapping);
+//    pthread_mutex_unlock(&my_args->mutex);
+
+
 
     int *prio=predicates_priority(total_ques,predicates);
 

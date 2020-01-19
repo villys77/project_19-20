@@ -918,7 +918,7 @@ int * predicates_priority_with_statistics(relation * relations,int total_preds,s
         if(predicates[i].num != -1)
         {
 //            printf("%d.%d %c %d\n",predicates[i].relation1,predicates[i].colum1,predicates[i].op,predicates[i].num);
-//            predicates[i].prio = prio;
+            predicates[i].prio = prio;
             prio ++;
         }
     }
@@ -932,12 +932,12 @@ int * predicates_priority_with_statistics(relation * relations,int total_preds,s
             {
                 if(predicates[i].relation1==predicates[i].relation2)
                 {
-//                    predicates[i].prio=prio;
+                    predicates[i].prio=prio;
                     prio++;
                 }
                 else if(mapping[predicates[i].relation1]==mapping[predicates[i].relation2])
                 {
-//                    predicates[i].prio=prio;
+                    predicates[i].prio=prio;
                     prio++;
                 }
                 else
@@ -951,7 +951,7 @@ int * predicates_priority_with_statistics(relation * relations,int total_preds,s
     }
 
     int c=0;
-    uint64_t F[total_preds][num_of_joins];
+    uint64_t F[total_preds][num_of_joins*2];
     for(i=0 ; i<total_preds; i++)
     {
         for (c=0; c< num_of_joins; c++)
@@ -959,7 +959,6 @@ int * predicates_priority_with_statistics(relation * relations,int total_preds,s
             F[i][c]=-1;
         }
     }
-///exw kanei malakia me to i
 
 
     for(i=0; i<total_preds; i++)
@@ -970,27 +969,64 @@ int * predicates_priority_with_statistics(relation * relations,int total_preds,s
             {
                 if(predicates[i].relation1!=predicates[i].relation2 && mapping[predicates[i].relation1]!=mapping[predicates[i].relation2])
                 {
-                    uint64_t kati=count_statistics(relations,mapping,predicates,i,5);
-//                    printf("%lu\n",kati);
-                    F[i][c]=count_statistics(relations,mapping,predicates,i,5);
+
+
+                    F[i][c]=relations[mapping[predicates[i].relation1]].stats.number[predicates[i].colum1];
                     c++;
+                    F[i][c]=relations[mapping[predicates[i].relation2]].stats.number[predicates[i].colum2];
+
+                }
+
+            }
+        }
+    }
+
+
+    int where=-1;
+    uint64_t min=100000000022222;
+    for(i=0; i<total_preds; i++)
+    {
+        for(c=0; c<(num_of_joins*2); c++)
+        {
+            if(F[i][c]!=-1)
+            {
+                if(F[i][c]<min)
+                {
+                    min=F[i][c];
+                    where=i;
                 }
             }
         }
     }
 
-    for(i=0 ; i<total_preds; i++)
+    if(where==-1)
     {
-        for (c=0; c< num_of_joins; c++)
-        {
-            if(F[i][c]!=-1)
-            {
-                printf("%lu\n",F[i][c]);
+        free(prio_array);
+        prio_array=predicates_priority(total_preds,predicates);
+        return prio_array;
+    }
 
-            }
+//    printf("%lu %d\n",min,where);
+
+    for(i =0; i< total_preds; i++)
+    {
+        if(predicates[i].prio == -1)
+        {
+            predicates[i].prio = prio;
+            prio++;
         }
     }
 
+    for(i = 0; i< total_preds; i++)
+    {
+        for(j=0; j<total_preds; j++)
+        {
+            if(predicates[j].prio == i)
+            {
+                prio_array[i]= j;
+            }
+        }
+    }
     return prio_array;
 }
 

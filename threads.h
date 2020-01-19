@@ -11,10 +11,7 @@
 #define THREADS_NUM 8
 
 
-
 void * thread_function(void *);
-
-
 
 void ThreadJob(thread_pool *);
 job * thread_pool_get_job(thread_pool * );
@@ -23,4 +20,5 @@ void thread_pool_add_job(thread_pool * ,void (*function)(void* arg),void *);
 queue * queue_init();
 void thread_pool_barrier(thread_pool * );
 void thread_pool_destroy(thread_pool * );
+
 #endif

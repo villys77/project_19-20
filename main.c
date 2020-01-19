@@ -21,6 +21,7 @@ int main(int argc,char **argv)
     thread_pool * pool_threads=thread_pool_init(THREADS_NUM); ////Thread Pool
     queries_analysis(argv[2],relations,rels,original,pool_threads);
 
+
     thread_pool_destroy(pool_threads);
     if(original)
     {

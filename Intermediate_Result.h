@@ -7,6 +7,7 @@
 
 #include "structs.h"
 
+
 Intermediate_Result* create_Intermediate_Result(int numRel);
 Intermediate_Result* FilterUpdate (Intermediate_Result* mid, int newResults ,uint64_t *filter, int rel,int allRels);
 Intermediate_Result* JoinUpdate (Intermediate_Result* mid, int newResults, Result* List ,int rel1, int count, int allRels ,int rel2);
