@@ -11,6 +11,7 @@
 
 #define n 8
 
+
 relation * read_file(char*,int *,struct statistics**);
 uint64_t * loadRelation(char* );
 

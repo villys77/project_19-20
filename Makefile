@@ -19,5 +19,6 @@ Intermediate_Result.o : Intermediate_Result.c
 threads.o : threads.c
 	gcc -O3 -g3 -c threads.c
 
+
 clean:
 	rm main ; rm *.o;

@@ -2,13 +2,14 @@
 // Created by villys77 on 7/1/20.
 //
 
+
 #ifndef _THREADS_H_
 #define _THREADS_H_
 
 #include <pthread.h>
 #include "structs.h"
 
-#define THREADS_NUM 8
+#define THREADS_NUM 4
 
 
 void * thread_function(void *);

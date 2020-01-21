@@ -9,7 +9,6 @@
 #include <string.h>
 #include "structs.h"
 
-
 Result *ListInit()
 {
     Result *node = (Result *)malloc(sizeof(Result));

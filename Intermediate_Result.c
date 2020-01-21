@@ -8,7 +8,6 @@
 
 Intermediate_Result* create_Intermediate_Result(int numRel)
 {
-
     int  i;
 
     Intermediate_Result* mid = malloc(sizeof(Intermediate_Result));

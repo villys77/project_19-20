@@ -84,9 +84,13 @@ void * thread_function(void * args)
     pthread_mutex_unlock(&my_args->mutex);
 
 //    pthread_mutex_lock(&my_args->mutex);
-//    int * prio=predicates_priority_with_statistics(my_args->relations,total_ques,predicates,mapping);
-//    pthread_mutex_unlock(&my_args->mutex);
+//    int *prio=Join_Enumeration(my_args->relations,total_ques,predicates,mapping,relations_to_check);
+//    for(int i=0; i<total_ques; i++)
+//    {
+//        printf("%d\n",prio[i]);
+//    }
 
+//    pthread_mutex_unlock(&my_args->mutex);
 
 
     int *prio=predicates_priority(total_ques,predicates);
@@ -184,7 +188,6 @@ thread_pool * thread_pool_init(int n_threads)
 
 void thread_pool_add_job(thread_pool * pool,void (*function)(void* arg),void *arg)
 {
-//  if(thp==NULL || thp->queue == NULL) return;
     job *newjob = (job *)malloc(sizeof(job));
     newjob->function = function;
     newjob->arg = arg;

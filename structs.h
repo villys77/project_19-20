@@ -11,8 +11,6 @@
 #define SIZE_NODE (1024*1024)/(2*sizeof(uint64_t))
 #define QUICKSORT_SIZE 1024*64
 
-
-
 ////////////////////////////////
 ///////QUERIES
 

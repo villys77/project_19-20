@@ -437,7 +437,7 @@ struct Predicates *predicates_analysis(int total_preds,char * temp_str,struct re
     return predicates;
 }
 
-uint64_t count_statistics(relation * relations,int * mapping,struct Predicates * predicates, int counter,int given_mode  )
+void count_statistics(relation * relations,int * mapping,struct Predicates * predicates, int counter,int given_mode  )
 {
     ///1 gia filtra me =
     ///2 gia filtra me >
@@ -447,7 +447,6 @@ uint64_t count_statistics(relation * relations,int * mapping,struct Predicates *
 
     if(given_mode==1)
     {
-//        printf("mphka 1\n");
         //////sthlh A
 
         uint64_t max=relations[mapping[predicates[counter].relation1]].stats.max[predicates[counter].colum1];
@@ -469,7 +468,6 @@ uint64_t count_statistics(relation * relations,int * mapping,struct Predicates *
         {
             if(relations[mapping[predicates[counter].relation1]].stats.dis_vals[predicates[counter].colum1][k]==predicates[counter].num)
             {
-//                printf("mphka gamwww\n");
                 dis_flag=1;
                 break;
             }
@@ -521,7 +519,6 @@ uint64_t count_statistics(relation * relations,int * mapping,struct Predicates *
         }
         ////////
 
-        return 0;
     }
     else if(given_mode==2)
     {
@@ -570,7 +567,6 @@ uint64_t count_statistics(relation * relations,int * mapping,struct Predicates *
             }
         }
         ////////
-        return 0;
     }
     else if(given_mode==3)
     {
@@ -627,7 +623,6 @@ uint64_t count_statistics(relation * relations,int * mapping,struct Predicates *
 
 
         ////////
-        return 0;
 
     }
     else if(given_mode==4)
@@ -705,12 +700,10 @@ uint64_t count_statistics(relation * relations,int * mapping,struct Predicates *
                 }
             }
         }
-        return 0;
 
     }
     else if(given_mode==5)
     {
-//        printf("mphka 5\n");
         uint64_t prev_max_rel1=relations[mapping[predicates[counter].relation1]].stats.max[predicates[counter].colum1];
         uint64_t prev_min_rel1=relations[mapping[predicates[counter].relation1]].stats.min[predicates[counter].colum1];
 
@@ -753,7 +746,6 @@ uint64_t count_statistics(relation * relations,int * mapping,struct Predicates *
         relations[mapping[predicates[counter].relation1]].stats.number[predicates[counter].colum1]=(prev_number_rel1*prev_number_rel2)/num;
         relations[mapping[predicates[counter].relation2]].stats.number[predicates[counter].colum2]=(prev_number_rel1*prev_number_rel2)/num;
 
-//        printf("%lu %lu %lu\n",prev_number_rel1,prev_number_rel2,num);
         uint64_t plithos=relations[mapping[predicates[counter].relation1]].stats.number[predicates[counter].colum1];
 
         relations[mapping[predicates[counter].relation1]].stats.distinct[predicates[counter].colum1]=(prev_dis_rel1*prev_dis_rel2)/num;
@@ -807,7 +799,6 @@ uint64_t count_statistics(relation * relations,int * mapping,struct Predicates *
             }
         }
 
-        return plithos;
     }
 
 }
@@ -903,7 +894,7 @@ int * predicates_priority(int total_preds,struct Predicates *predicates)
     return prio_array;
 }
 
-int * predicates_priority_with_statistics(relation * relations,int total_preds,struct Predicates *predicates,int * mapping)
+int * Join_Enumeration(relation * relations,int total_preds,struct Predicates *predicates,int * mapping,int rels)
 {
     int i,j;
     int* prio_array = malloc(total_preds*(sizeof(int)));
@@ -917,9 +908,17 @@ int * predicates_priority_with_statistics(relation * relations,int total_preds,s
     {
         if(predicates[i].num != -1)
         {
-//            printf("%d.%d %c %d\n",predicates[i].relation1,predicates[i].colum1,predicates[i].op,predicates[i].num);
             predicates[i].prio = prio;
             prio ++;
+        }
+    }
+    int c=0;
+    int ad_array[rels][rels];
+    for(i=0; i<rels; i++)
+    {
+        for(c=0; c<rels; c++)
+        {
+            ad_array[i][c]=0;
         }
     }
 
@@ -942,71 +941,131 @@ int * predicates_priority_with_statistics(relation * relations,int total_preds,s
                 }
                 else
                 {
+                    ad_array[predicates[i].relation1][predicates[i].relation2]=1;
+                    ad_array[predicates[i].relation2][predicates[i].relation1]=1;
+
                     num_of_joins++;
-//                    printf("%d.%d %c %d.%d\n",predicates[i].relation1,predicates[i].colum1,predicates[i].op,predicates[i].relation2,predicates[i].colum2);
-//                    //Join Enumeration();
                 }
             }
         }
     }
-
-    int c=0;
-    uint64_t F[total_preds][num_of_joins*2];
-    for(i=0 ; i<total_preds; i++)
-    {
-        for (c=0; c< num_of_joins; c++)
-        {
-            F[i][c]=-1;
-        }
-    }
-
-
-    for(i=0; i<total_preds; i++)
-    {
-        if (predicates[i].num == -1)
-        {
-            if (predicates[i].op == '=')
-            {
-                if(predicates[i].relation1!=predicates[i].relation2 && mapping[predicates[i].relation1]!=mapping[predicates[i].relation2])
-                {
-
-
-                    F[i][c]=relations[mapping[predicates[i].relation1]].stats.number[predicates[i].colum1];
-                    c++;
-                    F[i][c]=relations[mapping[predicates[i].relation2]].stats.number[predicates[i].colum2];
-
-                }
-
-            }
-        }
-    }
-
-
+    int counter_joins=0;
     int where=-1;
-    uint64_t min=100000000022222;
-    for(i=0; i<total_preds; i++)
+    for(i =0; i< total_preds; i++)
     {
-        for(c=0; c<(num_of_joins*2); c++)
+        if(predicates[i].prio == -1)
         {
-            if(F[i][c]!=-1)
+            where=i;
+            counter_joins++;
+        }
+    }
+    if(counter_joins==1)
+    {
+        predicates[where].prio=prio;
+        for(i = 0; i< total_preds; i++)
+        {
+            for(j=0; j<total_preds; j++)
             {
-                if(F[i][c]<min)
+                if(predicates[j].prio == i)
                 {
-                    min=F[i][c];
-                    where=i;
+                    prio_array[i]= j;
                 }
             }
         }
-    }
-
-    if(where==-1)
-    {
-        free(prio_array);
-        prio_array=predicates_priority(total_preds,predicates);
         return prio_array;
     }
+    counter_joins=0;
+    where=-1;
 
-//    printf("%lu %d\n",min,where);
+
+//    for(i=0; i<rels; i++)
+//    {
+//        for(c=0; c<rels; c++)
+//        {
+//            printf("%d ",ad_array[i][c]);
+//        }
+//        printf("\n");
+//    }
+
+    uint64_t min_num=100000002222220000;
+    int first=-1;
+    for(i=0; i<rels; i++)
+    {
+        if(relations[mapping[i]].num_tuples<min_num)
+        {
+            min_num=relations[mapping[i]].num_tuples;
+            first=i;
+        }
+    }
+    int second=-1;
+    min_num=100000002222220000;
+    for(i=0; i<rels; i++)
+    {
+        if(ad_array[first][i]==1)
+        {
+            if(relations[mapping[i]].num_tuples<min_num)
+            {
+                min_num=relations[mapping[i]].num_tuples;
+                second=i;
+            }
+        }
+    }
+    int first_join=-1;
+    for(i=0; i<total_preds; i++)
+    {
+        if( (predicates[i].relation1==first && predicates[i].relation2==second) || (predicates[i].relation1==second && predicates[i].relation2==first) )
+        {
+//            printf("mphka\n");
+            first_join=i;
+            predicates[i].prio=prio;
+            prio++;
+        }
+    }
+
+    for(i =0; i< total_preds; i++)
+    {
+        if(predicates[i].prio == -1)
+        {
+            where=i;
+            counter_joins++;
+        }
+    }
+    if(counter_joins==1 )
+    {
+        predicates[where].prio=prio;
+        for(i = 0; i< total_preds; i++)
+        {
+            for(j=0; j<total_preds; j++)
+            {
+                if(predicates[j].prio == i)
+                {
+                    prio_array[i]= j;
+                }
+            }
+        }
+        return prio_array;
+    }
+    else if( counter_joins==0)
+    {
+        for(i = 0; i< total_preds; i++)
+        {
+            for(j=0; j<total_preds; j++)
+            {
+                if(predicates[j].prio == i)
+                {
+                    prio_array[i]= j;
+                }
+            }
+        }
+        return prio_array;
+    }
+    counter_joins=0;
+    where=-1;
+
+
+
+
+//    printf("fi %d %d %d\n",first,second,first_join);
 
     for(i =0; i< total_preds; i++)
     {
