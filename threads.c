@@ -85,11 +85,6 @@ void * thread_function(void * args)
 
 //    pthread_mutex_lock(&my_args->mutex);
 //    int *prio=Join_Enumeration(my_args->relations,total_ques,predicates,mapping,relations_to_check);
-//    for(int i=0; i<total_ques; i++)
-//    {
-//        printf("%d\n",prio[i]);
-//    }
-
 //    pthread_mutex_unlock(&my_args->mutex);
 
 
@@ -207,7 +202,6 @@ void thread_pool_add_job(thread_pool * pool,void (*function)(void* arg),void *ar
     pool->job_queue->n_jobs++;
     pthread_cond_signal(&pool->empty_queue_cond);
     pthread_mutex_unlock(&pool->job_queue_mtx) ;
-    //unlock mutex
 }
 
 queue * queue_init()
@@ -255,6 +249,10 @@ void ThreadJob(thread_pool * pool)
         pthread_mutex_unlock(&pool->barrier_mtx);
         function = my_job->function;
         arg = my_job->arg;
+        if(arg==NULL)
+        {
+            free(my_job);
+        }
         function(arg);
         pthread_mutex_lock(&pool->barrier_mtx);
         pool->threads_working--;
@@ -288,7 +286,7 @@ void thread_pool_destroy(thread_pool * pool)
     void *ret;
     for(int i=0;i<THREADS_NUM;i++)
     {
-        thread_pool_add_job(pool,(void*)pthread_exit,NULL);
+        thread_pool_add_job(pool,(void*)pthread_exit,0);
     }
     for(int i=0;i<THREADS_NUM;i++)
     {
@@ -308,8 +306,6 @@ void thread_pool_destroy(thread_pool * pool)
     }
     free(pool->threads);
     free(pool->threads_ids);
-    free(pool->job_queue->first);
-    free(pool->job_queue->last);
     free(pool->job_queue);
 
     free(pool);

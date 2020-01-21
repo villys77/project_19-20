@@ -91,7 +91,7 @@ relation * read_file(char * filename,int *rels ,struct statistics ** original)
                     id += relations[i].num_tuples;
                 }
                 uint64_t temp_max = 0;
-                uint64_t temp_min = 100000000000000;
+                uint64_t temp_min = 1000000000000020;
                 for (k = id; k < id + relations[i].num_tuples; k++)
                 {
                     if (relations[i].data[k] > temp_max)

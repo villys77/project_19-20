@@ -11,7 +11,6 @@
 
 #define THREADS_NUM 4
 
-
 void * thread_function(void *);
 
 void ThreadJob(thread_pool *);

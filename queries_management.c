@@ -37,8 +37,6 @@ void queries_analysis(char * FileToOpen,relation * relations,int rels,struct sta
     while( (flag = getline(&line , &len ,file )) != -1 )
     {
 
-        char *token;
-        char **tokens;
         // edw tsekarw an h grammh mou exei megethos megalutero apo ena
         if (strlen(line) < 3)
         {
@@ -254,7 +252,6 @@ Intermediate_Result * exec_predicates(relation * relations,struct Predicates * p
                 free(filter);
                 IR->relResults[predicates[prio[j]].relation1] = 0;
                 return IR;
-//                break;
             }
             free(column.tuples);
             free(filter);
@@ -978,14 +975,6 @@ int * Join_Enumeration(relation * relations,int total_preds,struct Predicates *p
     where=-1;
 
 
-//    for(i=0; i<rels; i++)
-//    {
-//        for(c=0; c<rels; c++)
-//        {
-//            printf("%d ",ad_array[i][c]);
-//        }
-//        printf("\n");
-//    }
 
     uint64_t min_num=100000002222220000;
     int first=-1;
@@ -1015,78 +1004,90 @@ int * Join_Enumeration(relation * relations,int total_preds,struct Predicates *p
     {
         if( (predicates[i].relation1==first && predicates[i].relation2==second) || (predicates[i].relation1==second && predicates[i].relation2==first) )
         {
-//            printf("mphka\n");
             first_join=i;
             predicates[i].prio=prio;
             prio++;
         }
     }
-
-    for(i =0; i< total_preds; i++)
+    if(first_join!=-1)
     {
-        if(predicates[i].prio == -1)
-        {
-            where=i;
-            counter_joins++;
-        }
+        count_statistics(relations,mapping,predicates,first_join,5);
     }
-    if(counter_joins==1 )
+
+
+    while(1)
     {
-        predicates[where].prio=prio;
-        for(i = 0; i< total_preds; i++)
+        for(i =0; i< total_preds; i++)
         {
-            for(j=0; j<total_preds; j++)
+            if(predicates[i].prio == -1)
             {
-                if(predicates[j].prio == i)
-                {
-                    prio_array[i]= j;
-                }
+                where=i;
+                counter_joins++;
             }
         }
-        return prio_array;
-    }
-    else if( counter_joins==0)
-    {
-        for(i = 0; i< total_preds; i++)
+        if(counter_joins==1 )
         {
-            for(j=0; j<total_preds; j++)
-            {
-                if(predicates[j].prio == i)
-                {
-                    prio_array[i]= j;
-                }
-            }
-        }
-        return prio_array;
-    }
-    counter_joins=0;
-    where=-1;
-
-
-
-
-//    printf("fi %d %d %d\n",first,second,first_join);
-
-    for(i =0; i< total_preds; i++)
-    {
-        if(predicates[i].prio == -1)
-        {
-            predicates[i].prio = prio;
+            predicates[where].prio=prio;
             prio++;
-        }
-    }
-
-    for(i = 0; i< total_preds; i++)
-    {
-        for(j=0; j<total_preds; j++)
-        {
-            if(predicates[j].prio == i)
+            for(i = 0; i< total_preds; i++)
             {
-                prio_array[i]= j;
+                for(j=0; j<total_preds; j++)
+                {
+                    if(predicates[j].prio == i)
+                    {
+                        prio_array[i]= j;
+                    }
+                }
+            }
+            return prio_array;
+        }
+        else if(counter_joins==0)
+        {
+            for(i = 0; i< total_preds; i++)
+            {
+                for(j=0; j<total_preds; j++)
+                {
+                    if(predicates[j].prio == i)
+                    {
+                        prio_array[i]= j;
+                    }
+                }
+            }
+            return prio_array;
+        }
+        where=-1;
+        counter_joins=0;
+
+
+        uint64_t temp_where=-1;
+        uint64_t temp_min=100020200202002020;
+        for(i =0; i< total_preds; i++)
+        {
+            if(predicates[i].prio == -1)
+            {
+                if(relations[mapping[i]].stats.number[predicates[i].colum1]<temp_min)
+                {
+                    temp_min=relations[mapping[i]].stats.number[predicates[i].colum1];
+                    temp_where=i;
+                }
+                if(relations[mapping[i]].stats.number[predicates[i].colum2]<temp_min)
+                {
+                    temp_min=relations[mapping[i]].stats.number[predicates[i].colum2];
+                    temp_where=i;
+                }
+
             }
         }
+        if(temp_where!=-1)
+        {
+            predicates[temp_where].prio=prio;
+            prio++;
+            count_statistics(relations,mapping,predicates,temp_where,5);
+        }
+
     }
-    return prio_array;
+
+
 }
 
 void reset_statistics(relation * relations,struct statistics * original,char* rels)

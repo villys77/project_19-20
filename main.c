@@ -8,7 +8,7 @@
 
 int main(int argc,char **argv)
 {
-
+    
     if(argc!=3)
     {
         printf("Plase give correct arguments\n");

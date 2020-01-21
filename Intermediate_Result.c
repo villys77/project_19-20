@@ -6,6 +6,7 @@
 #include <string.h>
 #include "structs.h"
 
+
 Intermediate_Result* create_Intermediate_Result(int numRel)
 {
     int  i;
